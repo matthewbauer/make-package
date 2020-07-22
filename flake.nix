@@ -240,7 +240,7 @@
     };
 
     checks = genAttrs allSystems (system:
-      flattenAttrs (genAttrs [system] (crossSystem: let
+      flattenAttrs (genAttrs [system "x86_64-linux" "aarch64-linux"] (crossSystem: let
         pkgs = (import nixpkgs {
           inherit system;
           crossSystem = if system != crossSystem then crossSystem else null;
