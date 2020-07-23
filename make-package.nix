@@ -82,8 +82,8 @@ let
           else if (hostOffset == 1 && targetOffset == 1) then packages.pkgsTargetTarget
           else throw "unknown offset combination: (${hostOffset}, ${targetOffset})";
         in   if (attrByPath ((splitString "." identifier) ++ ["packageFun"]) null packages != null) then makePackage' ((attrByPath ((splitString "." identifier) ++ ["packageFun"]) null packages) packages' // { packages = packages'; })
-        else if (attrByPath (splitString "." identifier) null packages != null) then attrByPath (splitString "." identifier) null packages
-        else throw "could not find '${identifier}'")
+        else if (attrByPath (splitString "." identifier) null packages' != null) then attrByPath (splitString "." identifier) null packages'
+        else throw "Could not find '${identifier}'. Dependencies of makePackage should also be created with makePackage.")
       else throw "package must be a string identifier";
 
     depsBuildBuild' = flatten (map (splicePackage (-1) (-1) false) depsBuildBuild);
