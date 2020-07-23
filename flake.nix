@@ -1,7 +1,6 @@
 {
   description = "Tools to compose packages from Nixpkgs, combining callPackage and stdenv.mkDerivation";
 
-  # just needed for lib functions
   inputs.nixpkgs.url = "nixpkgs/nixpkgs-unstable";
 
   outputs = { self, nixpkgs }: let
@@ -19,24 +18,66 @@
 
     makePackage = import ./make-package.nix { inherit (nixpkgs) lib; };
 
-    checks = genAttrs allSystems (system:
+    makePackagesFlake = {
+      systems ? [ "x86_64-linux" "i686-linux" "x86_64-darwin" "aarch64-linux" ]
+    , crossSystems ? systems
+    , defaultPackageName ? null
+    , nixpkgs' ? nixpkgs
+    }: packages: let
+      defaultPackageName' = if defaultPackageName != null then defaultPackageName
+                            else (builtins.head (builtins.listToAttrs packages)).name;
+
+      forAllSystems = f: nixpkgs.lib.genAttrs systems (system: f system);
+
+      overlay = final: prev: builtins.mapAttrs (_: f: self.makePackage f) packages;
+
+      # Memoize nixpkgs for different platforms for efficiency.
+      nixpkgsFor = forAllSystems (system:
+        import nixpkgs' {
+          inherit system;
+          overlays = [ overlay ];
+        }
+      );
+
+      nixpkgsCrossFor = forAllSystems (system: forAllSystems (crossSystem:
+        import nixpkgs' {
+          inherit system crossSystem;
+          overlays = [ overlay ];
+        }
+      ));
+
+      packages' = forAllSystems (system: (builtins.mapAttrs {
+        inherit (nixpkgsFor.${system}) nix;
+      } // flattenAttrs (nixpkgs.lib.genAttrs crossSystems (crossSystem: {
+        inherit (nixpkgsCrossFor.${system}.${crossSystem}) nix;
+      }))));
+    in {
+      inherit overlay;
+
+      packages = packages';
+
+      defaultPackage = forAllSystems (system: packages'.${system}.${defaultPackageName'});
+    };
+
+    checks = (self.makePackagesFlake {} {
+      hello = ({ ... }: rec {
+        pname = "hello";
+        version = "2.10";
+
+        src = builtins.fetchTree {
+          type = "tarball";
+          url = "https://ftpmirror.gnu.org/${pname}/${pname}-${version}.tar.gz";
+          narHash = "sha256-tBws6cfY1e23oTv3qu2Oc1Q6ev1YtUrgAmGS6uh7ocY=";
+        };
+      });
+    }).packages // genAttrs allSystems (system:
+
       flattenAttrs (genAttrs [system "x86_64-linux" "aarch64-linux"] (crossSystem: let
         packages = (import nixpkgs {
           inherit system;
           crossSystem = if system != crossSystem then crossSystem else null;
         }) // this;
         this = {
-          hello = self.makePackage packages ({ ... }: rec {
-            pname = "hello";
-            version = "2.10";
-
-            src = builtins.fetchTree {
-              type = "tarball";
-              url = "https://ftpmirror.gnu.org/${pname}/${pname}-${version}.tar.gz";
-              narHash = "sha256-tBws6cfY1e23oTv3qu2Oc1Q6ev1YtUrgAmGS6uh7ocY=";
-            };
-          });
-
           jq = self.makePackage packages ({ ... }: rec {
             pname = "jq";
             version = "1.6";
