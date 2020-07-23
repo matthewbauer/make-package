@@ -12,6 +12,10 @@
     ));
     allSystems = [ "x86_64-linux" "i686-linux" "x86_64-darwin" "aarch64-linux" ];
   in {
+    overlay = final: prev: {
+      makePackage = self.makePackage prev;
+    };
+
     makePackage = import ./make-package.nix { inherit (nixpkgs) lib; };
 
     checks = genAttrs allSystems (system:
