@@ -109,8 +109,14 @@ let
     depsTargetTargetPropagated' = map (splicePackage 1 1 true) depsTargetTargetPropagated;
 
     # error checking
-    disallowEnvironment = name: if (environment ? name) then "can't set '${name}' in environment" else null;
+    disallowEnvironment = name: if (environment ? name) then "makePackage argument 'environment' cannot contain '${name}'" else null;
     requireType = name: type: if (attrs ? name && builtins.typeOf (attrs.${name}) != type) then "makePackage argument '${name}' should be of type '${type}' but got type '${builtins.typeOf attrs.${name}}'" else null;
+    headOrNull = l: if builtins.length l == 0 then null else builtins.head l;
+    requireListType = name: type: if (attrs ? name) then headOrNull (builtins.filter (v: !(isNull v)) (map (v:
+      if (builtins.typeOf v != type)
+        then "makePackage argument '${name}' should be a list of type '${type}' but found a list element of type '${builtins.typeOf attrs.${name}}'"
+        else null
+    ) attrs.${name})) else null;
     errMessages = builtins.filter (v: !(isNull v)) [
       (disallowEnvironment "buildCommand")
       (disallowEnvironment "unpackPhase")
@@ -127,10 +133,12 @@ let
       (requireType "preUnpack" "string")
       (requireType "postUnpack" "string")
       (requireType "patches" "list")
+      # (requireListType "patches" "path")
       (requireType "prePatch" "string")
       (requireType "postPatch" "string")
       (requireType "dontConfigure" "bool")
       (requireType "configureFlags" "list")
+      (requireListType "configureFlags" "string")
       (requireType "preConfigure" "string")
       (requireType "postConfigure" "string")
       (requireType "dontDisableStatic" "bool")
@@ -138,20 +146,25 @@ let
       (requireType "dontAddPrefix" "bool")
       (requireType "dontFixLibtool" "bool")
       (requireType "cmakeFlags" "list")
+      (requireListType "cmakeFlags" "string")
       (requireType "mesonFlags" "list")
+      (requireListType "mesonFlags" "string")
       (requireType "dontBuild" "bool")
       (requireType "enableParallelBuilding" "bool")
       (requireType "makeFlags" "list")
       (requireType "preBuild" "string")
       (requireType "postBuild" "string")
       (requireType "hardeningEnable" "list")
+      (requireListType "hardeningEnable" "string")
       (requireType "hardeningDisable" "list")
+      (requireListType "hardeningDisable" "string")
       (requireType "doCheck" "bool")
       (requireType "enableParallelChecking" "bool")
       (requireType "preCheck" "string")
       (requireType "postCheck" "string")
       (requireType "dontInstall" "bool")
       (requireType "installFlags" "list")
+      (requireListType "installFlags" "string")
       (requireType "preInstall" "string")
       (requireType "postInstall" "string")
       (requireType "dontFixup" "bool")
