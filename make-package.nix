@@ -119,6 +119,10 @@ let
     inherit stdenv;
     builder = stdenv.shell;
     args = [ "-e" (builtins.toFile "builder.sh" (''
+      runPhase() {
+        local phase="$1"
+        eval "''${!phase:-$phase}"
+      }
       [ -e .attrs.sh ] && source .attrs.sh
       source $stdenv/setup
       genericBuild
