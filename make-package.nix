@@ -9,7 +9,7 @@ let
     pname, version, outputs ? ["out"]
 
     # system
-  , pkgs, system ? stdenv.buildPlatform.system, stdenv ? pkgs.stdenv
+  , packages, system ? stdenv.buildPlatform.system, stdenv ? packages.stdenv
 
     # unpack phase
   , src, dontMakeSourcesWritable ? false, sourceRoot ? null
@@ -71,19 +71,19 @@ let
   } @ attrs: let
 
     # TODO: this should run closePropagation to get propagated build inputs in drv
-    splicePackage = hostOffset: targetOffset: isPropagated: pkg:
-      if builtins.isString pkg
+    splicePackage = hostOffset: targetOffset: isPropagated: identifier:
+      if builtins.isString identifier
       then (let
-        pkgs' = if (hostOffset == -1 && targetOffset == -1) then pkgs.pkgsBuildBuild
-          else if (hostOffset == -1 && targetOffset == 0) then pkgs.pkgsBuildHost
-          else if (hostOffset == -1 && targetOffset == 1) then pkgs.pkgsBuildTarget
-          else if (hostOffset == 0 && targetOffset == 0) then pkgs.pkgsHostHost
-          else if (hostOffset == 0 && targetOffset == 1) then pkgs.pkgsHostTarget
-          else if (hostOffset == 1 && targetOffset == 1) then pkgs.pkgsTargetTarget
+        packages' = if (hostOffset == -1 && targetOffset == -1) then packages.pkgsBuildBuild
+          else if (hostOffset == -1 && targetOffset == 0) then packages.pkgsBuildHost
+          else if (hostOffset == -1 && targetOffset == 1) then packages.pkgsBuildTarget
+          else if (hostOffset == 0 && targetOffset == 0) then packages.pkgsHostHost
+          else if (hostOffset == 0 && targetOffset == 1) then packages.pkgsHostTarget
+          else if (hostOffset == 1 && targetOffset == 1) then packages.pkgsTargetTarget
           else throw "unknown offset combination: (${hostOffset}, ${targetOffset})";
-        in   if (attrByPath ((splitString "." pkg) ++ ["pkgFun"]) null pkgs != null) then makePackage' ((attrByPath ((splitString "." pkg) ++ ["pkgFun"]) null pkgs) pkgs' // { pkgs = pkgs'; })
-        else if (attrByPath (splitString "." pkg) null pkgs != null) then attrByPath (splitString "." pkg) null pkgs
-        else throw "could not find '${pkg}'")
+        in   if (attrByPath ((splitString "." identifier) ++ ["packageFun"]) null packages != null) then makePackage' ((attrByPath ((splitString "." identifier) ++ ["packageFun"]) null packages) packages' // { packages = packages'; })
+        else if (attrByPath (splitString "." identifier) null packages != null) then attrByPath (splitString "." identifier) null packages
+        else throw "could not find '${identifier}'")
       else throw "package must be a string identifier";
 
     depsBuildBuild' = flatten (map (splicePackage (-1) (-1) false) depsBuildBuild);
@@ -220,12 +220,12 @@ let
     inherit impureEnvVars;
   })) // {
     meta.outputsToInstall = outputs;
-    outputSystem = pkgs.stdenv.hostPlatform.system;
+    outputSystem = packages.stdenv.hostPlatform.system;
     outputUnspecified = true;
     overrideAttrs = f: makePackage' (attrs // (f attrs));
   };
-in pkgs: f: (makePackage' ((f pkgs) // { inherit pkgs; })) // {
-     pkgFun = f;
+in packages: packageFun: (makePackage' ((packageFun packages) // { inherit packages; })) // {
+     inherit packageFun;
 
      # TODO: implement override
    }

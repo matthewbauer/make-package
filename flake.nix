@@ -16,12 +16,12 @@
 
     checks = genAttrs allSystems (system:
       flattenAttrs (genAttrs [system "x86_64-linux" "aarch64-linux"] (crossSystem: let
-        pkgs = (import nixpkgs {
+        packages = (import nixpkgs {
           inherit system;
           crossSystem = if system != crossSystem then crossSystem else null;
         }) // this;
         this = {
-          hello = self.makePackage pkgs ({ ... }: rec {
+          hello = self.makePackage packages ({ ... }: rec {
             pname = "hello";
             version = "2.10";
 
@@ -32,7 +32,7 @@
             };
           });
 
-          jq = self.makePackage pkgs ({ ... }: rec {
+          jq = self.makePackage packages ({ ... }: rec {
             pname = "jq";
             version = "1.6";
 
@@ -56,7 +56,7 @@
             ];
           });
 
-          oniguruma = self.makePackage pkgs ({ ... }: rec {
+          oniguruma = self.makePackage packages ({ ... }: rec {
             pname = "oniguruma";
             version = "6.9.5_rev1";
 
@@ -69,7 +69,7 @@
             };
           });
 
-          m4 = self.makePackage pkgs ({ stdenv, ... }: rec {
+          m4 = self.makePackage packages ({ stdenv, ... }: rec {
             pname = "m4";
             version = "1.4.18";
 
@@ -84,7 +84,7 @@
             configureFlags = [ "--with-syscmd-shell=${stdenv.shell}" ];
           });
 
-          libxslt = self.makePackage pkgs ({ libxml2, ... }: rec {
+          libxslt = self.makePackage packages ({ libxml2, ... }: rec {
             pname = "libxslt";
             version = "1.1.34";
 
@@ -113,7 +113,7 @@
             '';
           });
 
-          xz = self.makePackage pkgs ({ ... }: rec {
+          xz = self.makePackage packages ({ ... }: rec {
             pname = "xz";
             version = "5.2.5";
 
@@ -136,7 +136,7 @@
             postInstall = "rm -rf $out/share/doc";
           });
 
-          nlohmann_json = self.makePackage pkgs ({ ... }: rec {
+          nlohmann_json = self.makePackage packages ({ ... }: rec {
             pname = "nlohmann_json";
             version = "3.7.3";
 
@@ -159,7 +159,7 @@
             postInstall = "rm -rf $out/lib64";
           });
 
-          brotli = self.makePackage pkgs ({ ... }: rec {
+          brotli = self.makePackage packages ({ ... }: rec {
             pname = "brotli";
             version = "1.0.7";
 
@@ -186,7 +186,7 @@
             '';
           });
 
-          editline = self.makePackage pkgs ({ ... }: rec {
+          editline = self.makePackage packages ({ ... }: rec {
             pname = "editline";
             version = "1.17.0";
 
@@ -201,7 +201,7 @@
             };
           });
 
-          libsodium = self.makePackage pkgs ({ ... }: rec {
+          libsodium = self.makePackage packages ({ ... }: rec {
             pname = "libsodium";
             version = "1.0.18";
 
@@ -214,7 +214,7 @@
             };
           });
 
-          sharutils = self.makePackage pkgs ({ ... }: rec {
+          sharutils = self.makePackage packages ({ ... }: rec {
             pname = "sharutils";
             version = "4.15.2";
 
@@ -237,7 +237,7 @@
             '';
           });
 
-          bzip2 = self.makePackage pkgs ({ ... }: rec {
+          bzip2 = self.makePackage packages ({ ... }: rec {
             pname = "bzip2";
             version = "1.0.6.0.1";
 
@@ -256,7 +256,7 @@
             '';
           });
 
-          lzo = self.makePackage pkgs ({ ... }: rec {
+          lzo = self.makePackage packages ({ ... }: rec {
             pname = "lzo";
             version = "2.10";
 
@@ -267,7 +267,7 @@
             };
           });
 
-          libarchive = self.makePackage pkgs ({ stdenv, ... }: rec {
+          libarchive = self.makePackage packages ({ stdenv, ... }: rec {
             pname = "libarchive";
             version = "3.4.3";
 
@@ -289,7 +289,7 @@
             doCheck = false; # fails
           });
 
-          boehmgc = self.makePackage pkgs ({ ... }: rec {
+          boehmgc = self.makePackage packages ({ ... }: rec {
             pname = "boehm-gc";
             version = "8.0.4";
 
@@ -304,7 +304,7 @@
             configureFlags = [ "--enable-cplusplus" "--with-libatomic-ops=none" ];
           });
 
-          nix = self.makePackage pkgs ({ stdenv, ... }: rec {
+          nix = self.makePackage packages ({ stdenv, ... }: rec {
             pname = "nix";
             version = "2.4pre20200622_334e26b";
 
