@@ -1,6 +1,7 @@
 {
   description = "Tools to compose packages from Nixpkgs, combining callPackage and stdenv.mkDerivation";
 
+  # just needed for lib functions
   inputs.nixpkgs.url = "nixpkgs/nixpkgs-unstable";
 
   outputs = { self, nixpkgs }: let

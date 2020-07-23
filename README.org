@@ -6,6 +6,33 @@ compatibility with these functions, we can create packages with much
 more structure, and robustness than provided by stdenv.mkDerivation
 and callPackage.
 
+** Differences from stdenv.mkDerivation
+
+- arguments to makePackage are checked, so you get an error if you
+  misspell one; additional variables to the derivation need to be
+  passed via “environment” (should be used sparingly)
+- strictDeps is enabled by default; if you don’t know what that is,
+  “buildInputs” should be sufficient for your use case
+- “native” build inputs are automatically put into
+  “disallowedReferences” since they should not appear in the output.
+- custom phases like buildCommand, unpackPhase, buildPhase, etc. are
+  disallowed; new phases should be defined in reusable “setup hooks”
+- check phase is enabled by default
+- separate debug info is enabled by default
+- installCheck and dist phases are removed; these should be done in a
+  separate derivation
+
+Eventually, I would like to enable “__structuredAttrs” as well, but
+that requires changes to Nixpkgs
+(https://github.com/NixOS/nixpkgs/pull/85042).
+
+** Differences from callPackage
+
+- splicing happens explicitly: the arguments passed in are always from
+  pkgsHostTarget, while "deps" must be string identifiers
+
+** Example
+
 For example, a flake for Nix would look like:
 
 #+BEGIN_SRC nix
@@ -15,93 +42,94 @@ For example, a flake for Nix would look like:
   inputs.nixpkgs.url = "nixpkgs/nixos-20.03-small";
   inputs.make-package.url = "git://github.com/matthewbauer/make-package.nix";
 
-  outputs = { self, nixpkgs, make-package }:
+  outputs = { self, nixpkgs, make-package }: let
+    flattenAttrs = f: builtins.listToAttrs (nixpkgs.lib.flatten (
+      map (n:
+        map (n': { name = "${n}-${n'}"; value = f.${n}.${n'}; }) (builtins.attrNames f.${n})
+      ) (builtins.attrNames f)
+    ));
 
-    let
+    systems = [ "x86_64-linux" "i686-linux" "x86_64-darwin" "aarch64-linux" ];
+    crossSystems = ["x86_64-linux" "aarch64-linux"];
 
-      version = builtins.readFile ./.version + versionSuffix;
-      versionSuffix =
-        if officialRelease
-        then ""
-        else "pre${builtins.substring 0 8 (self.lastModifiedDate or self.lastModified)}_${self.shortRev or "dirty"}";
+    forAllSystems = f: nixpkgs.lib.genAttrs systems (system: f system);
 
-      officialRelease = false;
+    # Memoize nixpkgs for different platforms for efficiency.
+    nixpkgsFor = forAllSystems (system:
+      import nixpkgs {
+        inherit system;
+        overlays = [ self.overlay ];
+      }
+    );
 
-      systems = [ "x86_64-linux" "i686-linux" "x86_64-darwin" "aarch64-linux" ];
+    nixpkgsCrossFor = forAllSystems (system: forAllSystems (crossSystem:
+      import nixpkgs {
+        inherit system crossSystem;
+        overlays = [ self.overlay ];
+      }
+    ));
+  in {
+    overlay = final: prev: {
 
-      forAllSystems = f: nixpkgs.lib.genAttrs systems (system: f system);
+      nix = make-package.makePackage prev ({ stdenv, ... }: rec {
+        pname = "nix";
+        version = "2.4pre20200622_334e26b";
 
-      # Memoize nixpkgs for different platforms for efficiency.
-      nixpkgsFor = forAllSystems (system:
-        import nixpkgs {
-          inherit system;
-          overlays = [ self.overlay ];
-        }
-      );
+        outputs = [ "out" "dev" "man" "doc" ];
 
-    in {
+        depsBuildHost = [
+          "pkgconfig"
+          "autoreconfHook"
+          "autoconf-archive"
+          "bison"
+          "flex"
+          "libxml2"
+          "libxslt"
+          "docbook5"
+          "docbook_xsl_ns"
+          "jq"
+        ];
+        depsHostTarget = [
+          "curl"
+          "openssl"
+          "sqlite"
+          "xz"
+          "bzip2"
+          "nlohmann_json"
+          "brotli"
+          "boost"
+          "editline"
+          "libsodium"
+          "libarchive"
+          "gtest"
+        ] ++ stdenv.lib.optional stdenv.hostPlatform.isLinux "libseccomp";
+        depsHostTargetPropagated = [ "boehmgc" ];
 
-      # A Nixpkgs overlay that overrides the 'nix' and
-      # 'nix.perl-bindings' packages.
-      overlay = final: prev: {
+        src = self;
 
-        nix = make-package.makePackage prev ({ stdenv, ... }: rec {
-          pname = "nix";
-          version = "2.4pre20200622_334e26b";
+        configureFlags = [
+          "--with-store-dir=/nix/store"
+          "--localstatedir=/nix/"
+          "--sysconfdir=/etc"
+          "--disable-init-state"
+          "--enable-gc"
+          "--with-system=${stdenv.hostPlatform.system}"
+        ];
 
-          outputs = [ "out" "dev" "man" "doc" ];
+        makeFlags = [ "profiledir=${placeholder "out"}/etc/profile.d" ];
 
-          depsBuildHost = [
-            "pkgconfig"
-            "autoreconfHook"
-            "autoconf-archive"
-            "bison"
-            "flex"
-            "libxml2"
-            "libxslt"
-            "docbook5"
-            "docbook_xsl_ns"
-            "jq"
-          ];
-          depsHostTarget = [
-            "curl"
-            "openssl"
-            "sqlite"
-            "xz"
-            "bzip2"
-            "nlohmann_json"
-            "brotli"
-            "boost"
-            "editline"
-            "libsodium"
-            "libarchive"
-            "gtest"
-          ] ++ stdenv.lib.optional stdenv.hostPlatform.isLinux "libseccomp";
-          depsHostTargetPropagated = [ "boehmgc" ];
-
-          src = self;
-
-          configureFlags = [
-            "--with-store-dir=/nix/store"
-            "--localstatedir=/nix/"
-            "--sysconfdir=/etc"
-            "--disable-init-state"
-            "--enable-gc"
-            "--with-system=${stdenv.hostPlatform.system}"
-          ];
-
-          makeFlags = [ "profiledir=${placeholder "out"}/etc/profile.d" ];
-
-          installFlags = [ "sysconfdir=${placeholder "out"}/etc" ];
-        });
-
-      };
-
-      packages = forAllSystems (system: {
-        inherit (nixpkgsFor.${system}) nix;
+        installFlags = [ "sysconfdir=${placeholder "out"}/etc" ];
       });
 
-      defaultPackage = forAllSystems (system: self.packages.${system}.nix);
+    };
+
+    packages = forAllSystems (system: ({
+      inherit (nixpkgsFor.${system}) nix;
+    } // flattenAttrs (nixpkgs.lib.genAttrs crossSystems (crossSystem: {
+      inherit (nixpkgsCrossFor.${system}.${crossSystem}) nix;
+    }))));
+
+    defaultPackage = forAllSystems (system: self.packages.${system}.nix);
 
   };
 }
