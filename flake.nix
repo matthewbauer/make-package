@@ -389,7 +389,7 @@
 
             configureFlags = [
               "--with-store-dir=/nix/store"
-              "--localstatedir=/nix/"
+              "--localstatedir=/nix/var"
               "--sysconfdir=/etc"
               "--disable-init-state"
               "--enable-gc"
