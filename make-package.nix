@@ -192,7 +192,6 @@ let
       (requireType "debug" "int")
       (requireType "showBuildStats" "bool")
       (requireType "environment" "set")
-      (requireType "impureEnvVars" "list")
     ];
 
   in if errMessages == [] then ((derivation (environment // {
