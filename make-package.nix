@@ -84,6 +84,8 @@ let
         in   if (attrByPath ((splitString "." identifier) ++ ["packageFun"]) null packages != null) then makePackage' ((attrByPath ((splitString "." identifier) ++ ["packageFun"]) null packages) packages' // { packages = packages'; })
         else if (attrByPath (splitString "." identifier) null packages' != null) then attrByPath (splitString "." identifier) null packages'
         else throw "Could not find '${identifier}'. Dependencies of makePackage should also be created with makePackage.")
+
+      # TODO: if the package has the right offsets, we could allow them to be used here
       else throw "package must be a string identifier";
 
     depsBuildBuild' = flatten (map (splicePackage (-1) (-1) false) depsBuildBuild);
