@@ -1,0 +1,66 @@
+* make-package.nix
+
+This is a Nix function for creating packages in Nix. It combines
+‘stdenv.mkDerivation’ and ‘callPackage’ from Nixpkgs. By breaking
+compatibility with these functions, we can create packages with much
+more structure, and robustness than provided by stdenv.mkDerivation
+and callPackage.
+
+For example, to make Nix:
+
+#+BEGIN_SRC nix
+let makePackage = import ./make-package.nix { inherit (import <nixpkgs> {}) lib; };
+in makePackage packages ({ stdenv, ... }: rec {
+    pname = "nix";
+    version = "2.4pre20200622_334e26b";
+
+    outputs = [ "out" "dev" "man" "doc" ];
+
+    depsBuildHost = [
+      "pkgconfig"
+      "autoreconfHook"
+      "autoconf-archive"
+      "bison"
+      "flex"
+      "libxml2"
+      "libxslt"
+      "docbook5"
+      "docbook_xsl_ns"
+      "jq"
+    ];
+    depsHostTarget = [
+      "curl"
+      "openssl"
+      "sqlite"
+      "xz"
+      "bzip2"
+      "nlohmann_json"
+      "brotli"
+      "boost"
+      "editline"
+      "libsodium"
+      "libarchive"
+      "gtest"
+    ] ++ optional stdenv.hostPlatform.isLinux "libseccomp";
+    depsHostTargetPropagated = [ "boehmgc" ];
+
+    src = builtins.fetchTree {
+      type = "tarball";
+      url = "https://github.com/NixOS/${pname}/archive/334e26bfc2ce82912602e8a0f9f9c7e0fb5c3221.tar.gz";
+      narHash = "14a2yyn1ygymlci6hl5d308fs3p3m0mgcfs5dc8dn0s3lg5qvbmp";
+    };
+
+    configureFlags = [
+      "--with-store-dir=/nix/store"
+      "--localstatedir=/nix/"
+      "--sysconfdir=/etc"
+      "--disable-init-state"
+      "--enable-gc"
+      "--with-system=${stdenv.hostPlatform.system}"
+    ];
+
+    makeFlags = [ "profiledir=${placeholder "out"}/etc/profile.d" ];
+
+    installFlags = [ "sysconfdir=${placeholder "out"}/etc" ];
+  });
+#+END_SRC
