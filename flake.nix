@@ -17,7 +17,7 @@
     makePackage = import ./make-package.nix { inherit (nixpkgs) lib; };
 
     makePackagesFlake = {
-      systems ? [ "x86_64-linux" "i686-linux" "x86_64-darwin" "aarch64-linux" ]
+      systems ? allSystems
     , crossSystems ? systems
     , defaultPackageName ? null
     , nixpkgs' ? nixpkgs

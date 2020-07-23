@@ -125,7 +125,7 @@ let
         local phase="$1"
         eval "''${!phase:-$phase}"
       }
-      [ -e .attrs.sh ] && source .attrs.sh
+      if [ -e .attrs.sh ]; then source .attrs.sh; fi
       source $stdenv/setup
       genericBuild
     '' + optionalString separateDebugInfo ''
