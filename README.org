@@ -62,5 +62,5 @@ in makePackage packages ({ stdenv, ... }: rec {
     makeFlags = [ "profiledir=${placeholder "out"}/etc/profile.d" ];
 
     installFlags = [ "sysconfdir=${placeholder "out"}/etc" ];
-  });
+  })
 #+END_SRC
