@@ -110,7 +110,7 @@ let
 
   in (derivation (builtins.removeAttrs environment ["buildCommand" "unpackPhase" "patchPhase" "configurePhase" "buildPhase" "checkPhase" "fixupPhase"] // {
     inherit system;
-    name = "${stdenv.hostPlatform.system}-${pname}-${version}";
+    name = "${pname}-${version}";
     outputs = outputs ++ optional separateDebugInfo "debug";
     __ignoreNulls = true;
 
