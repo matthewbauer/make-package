@@ -108,7 +108,81 @@ let
     depsTargetTarget' = map (splicePackage 1 1 false) depsTargetTarget;
     depsTargetTargetPropagated' = map (splicePackage 1 1 true) depsTargetTargetPropagated;
 
-  in (derivation (builtins.removeAttrs environment ["buildCommand" "unpackPhase" "patchPhase" "configurePhase" "buildPhase" "checkPhase" "fixupPhase"] // {
+    # error checking
+    disallowEnvironment = name: if (environment ? name) then "can't set '${name}' in environment" else null;
+    requireType = name: type: if (attrs ? name && builtins.typeOf (attrs.${name}) != type) then "makePackage argument '${name}' should be of type '${type}' but got type '${builtins.typeOf attrs.${name}}'" else null;
+    errMessages = builtins.filter (v: !(isNull v)) [
+      (disallowEnvironment "buildCommand")
+      (disallowEnvironment "unpackPhase")
+      (disallowEnvironment "patchPhase")
+      (disallowEnvironment "configurePhase")
+      (disallowEnvironment "buildPhase")
+      (disallowEnvironment "checkPhase")
+      (disallowEnvironment "fixupPhase")
+      (requireType "pname" "string")
+      (requireType "version" "string")
+      (requireType "packages" "set")
+      (requireType "stdenv" "set")
+      (requireType "dontMakeSourcesWritable" "bool")
+      (requireType "preUnpack" "string")
+      (requireType "postUnpack" "string")
+      (requireType "patches" "list")
+      (requireType "prePatch" "string")
+      (requireType "postPatch" "string")
+      (requireType "dontConfigure" "bool")
+      (requireType "configureFlags" "list")
+      (requireType "preConfigure" "string")
+      (requireType "postConfigure" "string")
+      (requireType "dontDisableStatic" "bool")
+      (requireType "dontAddDisableDepTrack" "bool")
+      (requireType "dontAddPrefix" "bool")
+      (requireType "dontFixLibtool" "bool")
+      (requireType "cmakeFlags" "list")
+      (requireType "mesonFlags" "list")
+      (requireType "dontBuild" "bool")
+      (requireType "enableParallelBuilding" "bool")
+      (requireType "makeFlags" "list")
+      (requireType "preBuild" "string")
+      (requireType "postBuild" "string")
+      (requireType "hardeningEnable" "list")
+      (requireType "hardeningDisable" "list")
+      (requireType "doCheck" "bool")
+      (requireType "enableParallelChecking" "bool")
+      (requireType "preCheck" "string")
+      (requireType "postCheck" "string")
+      (requireType "dontInstall" "bool")
+      (requireType "installFlags" "list")
+      (requireType "preInstall" "string")
+      (requireType "postInstall" "string")
+      (requireType "dontFixup" "bool")
+      (requireType "setupHooks" "list")
+      (requireType "separateDebugInfo" "bool")
+      (requireType "preFixup" "string")
+      (requireType "postFixup" "string")
+      (requireType "buildInputs" "list")
+      (requireType "propagatedBuildInputs" "list")
+      (requireType "nativeBuildInputs" "list")
+      (requireType "checkInputs" "list")
+      (requireType "propagatedNativeBuildInputs" "list")
+      (requireType "depsBuildBuild" "list")
+      (requireType "depsBuildBuildPropagated" "list")
+      (requireType "depsBuildHost" "list")
+      (requireType "depsBuildHostPropagated" "list")
+      (requireType "depsBuildTarget" "list")
+      (requireType "depsBuildTargetPropagated" "list")
+      (requireType "depsHostHost" "list")
+      (requireType "depsHostHostPropagated" "list")
+      (requireType "depsHostTarget" "list")
+      (requireType "depsHostTargetPropagated" "list")
+      (requireType "depsTargetTarget" "list")
+      (requireType "depsTargetTargetPropagated" "list")
+      (requireType "debug" "int")
+      (requireType "showBuildStats" "bool")
+      (requireType "environment" "set")
+      (requireType "impureEnvVars" "list")
+    ];
+
+  in if errMessages == [] then ((derivation (environment // {
     inherit system;
     name = "${pname}-${version}";
     outputs = outputs ++ optional separateDebugInfo "debug";
@@ -229,7 +303,7 @@ let
     outputSystem = packages.stdenv.hostPlatform.system;
     outputUnspecified = true;
     overrideAttrs = f: makePackage' (attrs // (f attrs));
-  };
+  }) else throw (builtins.head errMessages);
 in packages: packageFun: (makePackage' ((packageFun packages) // { inherit packages; })) // {
      inherit packageFun;
 
