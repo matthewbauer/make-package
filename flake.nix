@@ -250,7 +250,7 @@
 
             outputs = [ "out" "dev" ];
 
-            src = fetchTree {
+            src = builtins.fetchTree {
               type = "tarball";
               url = "https://download.${pname}.org/${pname}/releases/${pname}-${version}.tar.gz";
               narHash = "sha256-58vNr1SKoLKC/YBPUH5pFmCm+7dLxKukXKHP7GTUNGo=";
