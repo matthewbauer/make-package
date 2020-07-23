@@ -46,11 +46,11 @@
         }
       ));
 
-      packages' = forAllSystems (system: (builtins.mapAttrs {
+      packages' = forAllSystems (system: {
         inherit (nixpkgsFor.${system}) nix;
       } // flattenAttrs (nixpkgs.lib.genAttrs crossSystems (crossSystem: {
         inherit (nixpkgsCrossFor.${system}.${crossSystem}) nix;
-      }))));
+      })));
     in {
       inherit overlay;
 
