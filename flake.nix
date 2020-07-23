@@ -18,7 +18,7 @@
 
     makePackagesFlake = {
       systems ? allSystems
-    , crossSystems ? systems
+    , crossSystems ? []
     , defaultPackageName ? null
     , nixpkgs' ? nixpkgs
     }: packages: let
