@@ -13,29 +13,29 @@ let
 
     # unpack phase
   , src, dontMakeSourcesWritable ? false, sourceRoot ? null
-  , unpackPhase ? null, preUnpack ? "", postUnpack ? ""
+  , preUnpack ? "", postUnpack ? ""
 
     # patch phase
   , patches ? [], prePatch ? "", postPatch ? ""
 
     # configure phase
   , dontConfigure ? false, configureFlags ? [], configureScript ? null
-  , configurePhase ? "", preConfigure ? "", postConfigure ? ""
+  , preConfigure ? "", postConfigure ? ""
   , dontDisableStatic ? false, dontAddDisableDepTrack ? false, dontAddPrefix ? false, dontFixLibtool ? false
   , cmakeFlags ? []
   , mesonFlags ? []
 
     # build phase
   , dontBuild ? false, enableParallelBuilding ? true, makeFlags ? [], makefile ? null
-  , buildPhase ? null, preBuild ? "", postBuild ? ""
+  , preBuild ? "", postBuild ? ""
   , hardeningEnable ? [], hardeningDisable ? []
 
     # check phase
   , doCheck ? true, enableParallelChecking ? true, checkTarget ? null
-  , checkPhase ? null, preCheck ? "", postCheck ? ""
+  , preCheck ? "", postCheck ? ""
 
     # install phase
-  , dontInstall ? false, installFlags ? [], installPhase ? null
+  , dontInstall ? false, installFlags ? []
   , preInstall ? "", postInstall ? ""
 
     # fixup phase
@@ -106,7 +106,7 @@ let
     depsTargetTarget' = map (splicePackage 1 1 false) depsTargetTarget;
     depsTargetTargetPropagated' = map (splicePackage 1 1 true) depsTargetTargetPropagated;
 
-  in (derivation (builtins.removeAttrs environment ["patchPhase" "fixupPhase"] // {
+  in (derivation (builtins.removeAttrs environment ["buildCommand" "unpackPhase" "patchPhase" "configurePhase" "buildPhase" "checkPhase" "fixupPhase"] // {
     inherit system;
     name = "${stdenv.hostPlatform.system}-${pname}-${version}";
     outputs = outputs ++ optional separateDebugInfo "debug";
@@ -189,17 +189,17 @@ let
     ''}" ] ++ mesonFlags;
 
     # build
-    inherit dontBuild makeFlags enableParallelBuilding makefile buildPhase preBuild postBuild;
+    inherit dontBuild makeFlags enableParallelBuilding makefile preBuild postBuild;
     NIX_HARDENING_ENABLE = if builtins.elem "all" hardeningDisable then []
       else subtractLists hardeningDisable (
         hardeningEnable ++ [ "fortify" "stackprotector" "pic" "strictoverflow" "format" "relro" "bindnow" ]
       );
 
     # check
-    inherit doCheck enableParallelChecking checkTarget checkPhase preCheck postCheck;
+    inherit doCheck enableParallelChecking checkTarget preCheck postCheck;
 
     # install
-    inherit dontInstall installFlags installPhase preInstall postInstall;
+    inherit dontInstall installFlags preInstall postInstall;
 
     # fixup
     inherit dontFixup preFixup postFixup setupHooks;
