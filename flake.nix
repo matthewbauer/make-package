@@ -12,9 +12,7 @@
     ));
     allSystems = [ "x86_64-linux" "i686-linux" "x86_64-darwin" "aarch64-linux" ];
   in {
-    overlay = final: prev: {
-      makePackage = self.makePackage prev;
-    };
+    overlay = final: prev: { makePackage = self.makePackage prev; };
 
     makePackage = import ./make-package.nix { inherit (nixpkgs) lib; };
 
@@ -25,11 +23,11 @@
     , nixpkgs' ? nixpkgs
     }: packages: let
       defaultPackageName' = if defaultPackageName != null then defaultPackageName
-                            else (builtins.head (builtins.listToAttrs packages)).name;
+                            else builtins.head (builtins.attrNames packages);
 
       forAllSystems = f: nixpkgs.lib.genAttrs systems (system: f system);
 
-      overlay = final: prev: builtins.mapAttrs (_: f: self.makePackage f) packages;
+      overlay = final: prev: builtins.mapAttrs (_: f: self.makePackage prev f) packages;
 
       # Memoize nixpkgs for different platforms for efficiency.
       nixpkgsFor = forAllSystems (system:
@@ -46,11 +44,10 @@
         }
       ));
 
-      packages' = forAllSystems (system: {
-        inherit (nixpkgsFor.${system}) nix;
-      } // flattenAttrs (nixpkgs.lib.genAttrs crossSystems (crossSystem: {
-        inherit (nixpkgsCrossFor.${system}.${crossSystem}) nix;
-      })));
+      packages' = forAllSystems (system: (builtins.mapAttrs (name: _: nixpkgsFor.${system}.${name}) packages)
+        // flattenAttrs (nixpkgs.lib.genAttrs crossSystems (crossSystem: builtins.mapAttrs (
+          (name: _: nixpkgsCrossFor.${system}.${crossSystem}.${name})
+        ) packages)));
     in {
       inherit overlay;
 
