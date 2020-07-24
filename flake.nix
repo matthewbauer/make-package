@@ -501,7 +501,7 @@
         '';
       };
 
-      nix_ = { stdenv, ... }: rec {
+      nix_ = { stdenv, libxslt_, ... }: rec {
         pname = "nix";
         version = "2.4pre20200622_334e26b";
 
@@ -514,7 +514,7 @@
           "bison"
           "flex"
           "libxml2"
-          "libxslt_"
+          libxslt_
           "docbook5"
           "docbook_xsl_ns"
           "jq_"
@@ -525,6 +525,7 @@
           "sqlite_"
           "xz_"
           "bzip2_"
+          "zlib_"
           "nlohmann_json_"
           "brotli_"
           "boost"

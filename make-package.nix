@@ -118,7 +118,7 @@ let
             else throw "Could not find '${package}'. Dependencies of makePackage should also be created with makePackage.")
       else if (package ? packageFun) then makePackage' (package.packageFun packages' // { packages = packages'; })
       else if (package ? defaultPackage && builtins.hasAttr system package.defaultPackage && package.defaultPackage.${system} ? packageFun) then makePackage' (package.defaultPackage.${system}.packageFun packages' // { packages = packages'; })
-      else throw "dependencies must be specified as either a package or a string identifier";
+      else throw "makePackage dependencies must be either a makePackage package or a string identifier";
 
     depsBuildBuild' = flatten (map (splicePackage (-1) (-1) false) depsBuildBuild);
     depsBuildBuildPropagated' = flatten (map (splicePackage (-1) (-1) true) depsBuildBuildPropagated);
@@ -433,7 +433,10 @@ let
     outputSystem = packages.stdenv.hostPlatform.system;
     outputUnspecified = true;
     overrideAttrs = f: makePackage' (attrs // (f attrs));
-  }) else throw (builtins.head errMessages);
+  })
+
+  # TODO: show more than one error message at a time
+  else throw (builtins.head errMessages);
 in packages: packageFun: (makePackage' ((packageFun packages) // { inherit packages; })) // {
      inherit packageFun;
      subtype = "package";
