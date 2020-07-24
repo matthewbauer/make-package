@@ -435,6 +435,7 @@ let
   }) else throw (builtins.head errMessages);
 in packages: packageFun: (makePackage' ((packageFun packages) // { inherit packages; })) // {
      inherit packageFun;
+     subtype = "package";
 
      # TODO: implement override
    }
