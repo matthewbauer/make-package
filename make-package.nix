@@ -117,29 +117,42 @@ let
     depsTargetTargetPropagated' = map (splicePackage 1 1 true) depsTargetTargetPropagated;
 
     # error checking
-    disallowEnvironment = name: if (environment ? name) then "makePackage argument 'environment' cannot contain '${name}'" else null;
-    requireType = name: type: if (builtins.hasAttr name attrs && builtins.typeOf (attrs.${name}) != type) then "makePackage argument '${name}' should be of type '${type}' but got type '${builtins.typeOf attrs.${name}}'" else null;
+    disallowEnvironment = name:
+      if (environment ? name) then "makePackage argument 'environment' cannot contain '${name}'" else null;
+    requireType = name: type:
+      if (builtins.hasAttr name attrs && builtins.typeOf (attrs.${name}) != type)
+      then "makePackage argument '${name}' should be of type '${type}' but got type '${builtins.typeOf attrs.${name}}'"
+      else null;
     headOrNull = l: if builtins.length l == 0 then null else builtins.head l;
-    requireListType = name: type: if builtins.hasAttr name attrs then headOrNull (builtins.filter (v: !(isNull v)) (map (v:
-      if (builtins.typeOf v != type)
+    requireListType = name: type:
+      if builtins.hasAttr name attrs then headOrNull (builtins.filter (v: !(isNull v)) (map (v:
+        if (builtins.typeOf v != type)
         then "makePackage argument '${name}' should be a list of type '${type}' but found a list element of type '${builtins.typeOf attrs.${name}}'"
         else null
-    ) attrs.${name})) else null;
+      ) attrs.${name})) else null;
     requireListOf = name: list: if builtins.hasAttr name attrs then (
       headOrNull (builtins.filter (v: !(isNull v)) (map (v:
         if builtins.elem v list then null
         else "makePackage argument '${name}' should be a list of [${toString list}], but found '${v}'")
         attrs.${name}))
     ) else null;
-    errMessages = builtins.filter (v: !(isNull v)) [
-      (disallowEnvironment "buildCommand")
-      (disallowEnvironment "unpackPhase")
-      (disallowEnvironment "patchPhase")
-      (disallowEnvironment "configurePhase")
-      (disallowEnvironment "buildPhase")
-      (disallowEnvironment "checkPhase")
-      (disallowEnvironment "fixupPhase")
-      # TODO: error any time something in environment is overriden
+    errMessages = builtins.filter (v: !(isNull v)) (
+      (map disallowEnvironment [
+        "buildCommand" "unpackPhase" "patchPhase" "configurePhase" "buildPhase" "checkPhase" "fixupPhase"
+        "system" "name" "outputs" "setOutputFlags" "outputDev" "outputBin" "outputInclude" "outputLib" "outputDoc"
+        "outputDevdoc" "outputMan" "outputDevman" "outputInfo" "__ignoreNulls" "stdenv" "builder" "args" "strictDeps"
+        "depsBuildBuild" "depsBuildBuildPropagated" "nativeBuildInputs" "propagatedNativeBuildInputs" "depsBuildTarget"
+        "depsBuildTargetPropagated" "depsHostHost" "depsHostHostPropagated" "buildInputs" "propagatedBuildInputs"
+        "depsTargetTarget" "depsTargetTargetPropagated" "disallowedReferences" "allowedRequisites" "allowedReferences"
+        "disallowedRequisites" "exportReferencesGraph" "dontUnpack" "src" "preUnpack" "postUnpack"
+        "dontMakeSourcesWritable" "sourceRoot" "dontPatch" "patches" "prePatch" "postPatch" "dontConfigure"
+        "configureScript" "preConfigure" "postConfigure" "configureFlags" "cmakeFlags" "mesonFlags" "dontBuild"
+        "makeFlags" "enableParallelBuilding" "makefile" "preBuild" "postBuild" "NIX_HARDENING_ENABLE" "doCheck"
+        "enableParallelChecking" "checkTarget" "preCheck" "postCheck" "dontInstall" "installFlags" "preInstall"
+        "postInstall" "dontFixup" "preFixup" "postFixup" "setupHooks" "doInstallCheck" "doDist" "NIX_DEBUG"
+        "showBuildStats" "allowSubstitutes" "preferLocalBuild" "passAsFile" "outputHash" "outputHashAlgo"
+        "outputHashMode" "impureEnvVars"
+      ]) ++ [
       (requireType "pname" "string")
       (requireType "version" "string")
       (requireType "setOutputFlags" "bool")
@@ -210,7 +223,7 @@ let
       (requireType "environment" "set")
       (requireType "configurePlatforms" "list")
       (requireListOf "configurePlatforms" ["build" "host" "target"])
-    ];
+    ]);
 
   in if errMessages == [] then ((derivation (environment // {
     inherit system;
