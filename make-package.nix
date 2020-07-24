@@ -118,13 +118,19 @@ let
 
     # error checking
     disallowEnvironment = name: if (environment ? name) then "makePackage argument 'environment' cannot contain '${name}'" else null;
-    requireType = name: type: if (attrs ? name && builtins.typeOf (attrs.${name}) != type) then "makePackage argument '${name}' should be of type '${type}' but got type '${builtins.typeOf attrs.${name}}'" else null;
+    requireType = name: type: if (builtins.hasAttr name attrs && builtins.typeOf (attrs.${name}) != type) then "makePackage argument '${name}' should be of type '${type}' but got type '${builtins.typeOf attrs.${name}}'" else null;
     headOrNull = l: if builtins.length l == 0 then null else builtins.head l;
-    requireListType = name: type: if (attrs ? name) then headOrNull (builtins.filter (v: !(isNull v)) (map (v:
+    requireListType = name: type: if builtins.hasAttr name attrs then headOrNull (builtins.filter (v: !(isNull v)) (map (v:
       if (builtins.typeOf v != type)
         then "makePackage argument '${name}' should be a list of type '${type}' but found a list element of type '${builtins.typeOf attrs.${name}}'"
         else null
     ) attrs.${name})) else null;
+    requireListOf = name: list: if builtins.hasAttr name attrs then (
+      headOrNull (builtins.filter (v: !(isNull v)) (map (v:
+        if builtins.elem v list then null
+        else "makePackage argument '${name}' should be a list of [${toString list}], but found '${v}'")
+        attrs.${name}))
+    ) else null;
     errMessages = builtins.filter (v: !(isNull v)) [
       (disallowEnvironment "buildCommand")
       (disallowEnvironment "unpackPhase")
@@ -164,9 +170,9 @@ let
       (requireType "preBuild" "string")
       (requireType "postBuild" "string")
       (requireType "hardeningEnable" "list")
-      (requireListType "hardeningEnable" "string")
+      (requireListOf "hardeningEnable" [ "all" "fortify" "stackprotector" "pie" "pic" "strictoverflow" "format" "relro" "bindnow" ])
       (requireType "hardeningDisable" "list")
-      (requireListType "hardeningDisable" "string")
+      (requireListOf "hardeningDisable" [ "all" "fortify" "stackprotector" "pie" "pic" "strictoverflow" "format" "relro" "bindnow" ])
       (requireType "doCheck" "bool")
       (requireType "enableParallelChecking" "bool")
       (requireType "preCheck" "string")
@@ -201,6 +207,8 @@ let
       (requireType "debug" "int")
       (requireType "showBuildStats" "bool")
       (requireType "environment" "set")
+      (requireType "configurePlatforms" "list")
+      (requireListOf "configurePlatforms" ["build" "host" "target"])
     ];
 
   in if errMessages == [] then ((derivation (environment // {
