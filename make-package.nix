@@ -68,10 +68,10 @@ let
     # it clear which is which
   , separateDebugInfo ? !stdenv.hostPlatform.isDarwin # broken on macOS
   , dontPatchELF ? false, dontAddExtraLibs ? false, noAuditTmpdir ? false, runtimeDependencies ? []
-  , dontAutoPatchelf ? false, dontGzipMan ? false, lcovFilter ? [], lcovExtraTraceFiles ? []
-  , dontRewriteSymlinks ? false, forceShare ? [], dontMoveLib64 ? false, dontMoveSbin ? false
-  , propagatedBuildOutputs ? [], dontPatchShebangs ? false, dontPruneLibtoolFiles ? false
-  , stripDebugList ? [], dontStrip ? false, stripDebugFlags ? [], stripAllFlags ? [], stripAllList ? []
+  , dontAutoPatchelf ? false, dontGzipMan ? false
+  , dontRewriteSymlinks ? false, forceShare ? null, dontMoveLib64 ? false, dontMoveSbin ? false
+  , propagatedBuildOutputs ? null, dontPatchShebangs ? false, dontPruneLibtoolFiles ? false
+  , stripDebugList ? null, dontStrip ? false, stripAllList ? []
   , dontUpdateAutotoolsGnuConfigScripts ? false, wrapPrefixVariables ? [], dontWrapGApps ? false, gappsWrapperArgs ? []
 
     # inputs
@@ -180,9 +180,9 @@ let
         "ninjaFlags" "ninjaFlags" "dontUseNinjaCheck" "dontUseNinjaInstall" "premakeFlags" "premakefile"
         "premakeBackend""dontUseGnConfigure" "dontUseSconsInstall" "sconsFlags" "wafFlags" "dontUseWafConfigure"
         "dontUseTupConfigure" "dontAddExtraLibs" "noAuditTmpdir" "autoreconfFlags" "runtimeDependencies"
-        "dontAutoPatchelf" "dontGzipMan" "lcovFilter" "lcovExtraTraceFiles" "dontRewriteSymlinks" "forceShare"
+        "dontAutoPatchelf" "dontGzipMan" "dontRewriteSymlinks" "forceShare"
         "dontMoveLib64" "dontMoveSbin" "propagatedBuildOutputs" "dontPatchShebangs" "dontPruneLibtoolFiles"
-        "stripDebugList" "dontStrip" "stripDebugFlags" "stripAllFlags" "stripAllList"
+        "stripDebugList" "dontStrip" "stripAllList"
         "dontUpdateAutotoolsGnuConfigScripts" "wrapPrefixVariables" "dontWrapGApps" "gappsWrapperArgs"
       ]) ++ [
       (requireType "pname" "string")
@@ -281,19 +281,12 @@ let
       (requireType "runtimeDependencies" "list")
       (requireType "dontAddPatchelf" "bool")
       (requireType "dontGzipMan" "bool")
-      (requireType "lcovFilter" "string")
-      (requireType "lcovExtraTraceFiles" "list")
       (requireType "dontRewriteSymlinks" "bool")
-      (requireType "forceShare" "list")
       (requireType "dontMoveLib64" "bool")
       (requireType "dontMoveSbin" "bool")
-      (requireType "propagatedBuildOutputs" "list")
       (requireType "dontPatchShebangs" "bool")
       (requireType "dontPruneLibtoolFiles" "bool")
       (requireType "dontStrip" "bool")
-      (requireType "stripDebugList" "list")
-      (requireType "stripDebugFlags" "list")
-      (requireType "stripAllFlags" "list")
       (requireType "stripAllList" "list")
       (requireType "wrapPrefixVariables" "list")
       (requireType "dontWrapGApps" "bool")
@@ -417,8 +410,8 @@ let
     inherit dontFixup preFixup postFixup setupHooks;
     inherit dontPatchELF runtimeDependencies dontAutoPatchelf propagatedBuildOutputs;
     inherit forceShare dontMoveLib64 dontMoveSbin;
-    inherit stripDebugList dontStrip stripDebugFlags stripAllFlags stripAllList;
-    inherit dontGzipMan lcovFilter lcovExtraTraceFiles dontRewriteSymlinks dontPatchShebangs dontPruneLibtoolFiles;
+    inherit stripDebugList dontStrip stripAllList;
+    inherit dontGzipMan dontRewriteSymlinks dontPatchShebangs dontPruneLibtoolFiles;
     inherit wrapPrefixVariables dontWrapGApps gappsWrapperArgs;
     inherit noAuditTmpdir;
 
