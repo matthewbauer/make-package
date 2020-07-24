@@ -1,0 +1,21 @@
+name: "Test"
+on:
+  pull_request:
+  push:
+jobs:
+  tests:
+    strategy:
+      matrix:
+        os: [ubuntu-latest, macos-latest]
+    runs-on: ${{ matrix.os }}
+    steps:
+    - uses: actions/checkout@v2
+      with:
+        fetch-depth: 0
+    - uses: cachix/install-nix-action@v10
+
+    - name: Build Flakes
+      run: nix-build -E '(import (fetchTarball https://github.com/edolstra/flake-compat/archive/master.tar.gz) { src = ./.; }).defaultNix.packages.${builtins.currentSystem}'
+
+    - name: Run Flakes checks
+      run: nix-build -E '(import (fetchTarball https://github.com/edolstra/flake-compat/archive/master.tar.gz) { src = ./.; }).defaultNix.checks.${builtins.currentSystem}'

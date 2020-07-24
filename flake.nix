@@ -72,7 +72,9 @@
           pname = "oniguruma";
           version = "6.9.5_rev1";
 
-          depsBuildHost = [ "autoreconfHook" ];
+          depsBuildHost = [
+            "autoreconfHook"
+          ];
 
           src = builtins.fetchTree {
             type = "tarball";
@@ -81,7 +83,7 @@
           };
         };
       };
-    in self.makePackagesFlake' { crossSystems = ["x86_64-linux" "aarch64-linux"]; } {
+    in self.makePackagesFlake' { } {
       inherit oniguruma_;
 
       jq_ = { ... }: rec {
@@ -90,7 +92,10 @@
 
         outputs = [ "bin" "doc" "man" "dev" "lib" "out" ];
 
-        depsHostTarget = [ "oniguruma_" ];
+        depsHostTarget = [
+          "oniguruma_"
+        ];
+
         src = builtins.fetchTree {
           type = "tarball";
           url = "https://github.com/stedolan/${pname}/releases/download/${pname}-${version}/${pname}-${version}.tar.gz";
@@ -118,19 +123,33 @@
         };
       });
 
-      m4_ = { stdenv, ... }: rec {
-        pname = "m4";
-        version = "1.4.18";
+      zlib_ = { stdenv, ... }: rec {
+        pname = "zlib";
+        version = "1.2.11";
+
+        outputs = [ "out" "dev" ];
+        setOutputFlags = false;
+        outputDoc = "dev"; # single tiny man3 page
 
         src = builtins.fetchTree {
           type = "tarball";
-          url = "https://ftpmirror.gnu.org/${pname}/${pname}-${version}.tar.bz2";
-          narHash = "sha256-ogI4Yqq2ag8coIDfeTywz/tImM3nDFY8u4kR5dArl2o=";
+          url = "https://www.zlib.net/fossils/${pname}-${version}.tar.gz";
+          narHash = "sha256-AQIoy96jcdmKs/F4GVqDFXxcZ7c66GF+yalHg3ALEyU=";
         };
 
-        doCheck = false;
+        configurePlatforms = [];
 
-        configureFlags = [ "--with-syscmd-shell=${stdenv.shell}" ];
+        postPatch = stdenv.lib.optionalString stdenv.hostPlatform.isDarwin ''
+          substituteInPlace configure \
+            --replace '/usr/bin/libtool' 'ar' \
+            --replace 'AR="libtool"' 'AR="ar"' \
+            --replace 'ARFLAGS="-o"' 'ARFLAGS="-r"'
+        '';
+
+        makeFlags = [
+          "PREFIX=${stdenv.cc.targetPrefix}"
+          "SHARED_MODE=1"
+        ];
       };
 
       libxslt_ = { libxml2, ... }: rec {
@@ -139,8 +158,13 @@
 
         outputs = [ "bin" "dev" "out" "man" "doc" ];
 
-        depsBuildHostPropagated = [ "findXMLCatalogs" ];
-        depsHostTarget = [ "libxml2" "gettext" ];
+        depsHostTargetPropagated = [
+          "findXMLCatalogs"
+        ];
+        depsHostTarget = [
+          "libxml2"
+          "gettext"
+        ];
 
         src = builtins.fetchTree {
           type = "tarball";
@@ -189,12 +213,15 @@
         pname = "nlohmann_json";
         version = "3.7.3";
 
-        nativeBuildInputs = [ "cmake" ];
+        nativeBuildInputs = [
+          "cmake"
+        ];
 
         src = builtins.fetchTree {
-          type = "tarball";
-          url = "https://github.com/nlohmann/json/archive/v${version}.tar.gz";
-          narHash = "sha256-PNH+swMdjrh53Ioz2D8KuERKFpKM+iBf+eHo+HvwORM=";
+          type = "github";
+          owner = "nlohmann";
+          repo = "json";
+          rev = "e7b3b40b5a95bc74b9a7f662830a27c49ffc01b4";
         };
 
         cmakeFlags = [
@@ -214,12 +241,15 @@
 
         outputs = [ "out" "dev" "lib" ];
 
-        depsBuildHost = [ "cmake" ];
+        depsBuildHost = [
+          "cmake"
+        ];
 
         src = builtins.fetchTree {
-          type = "tarball";
-          url = "https://github.com/google/brotli/archive/v${version}.tar.gz";
-          narHash = "sha256-fO/rWhGarpofjSe5uK9EITw0EpsBPib1muS5xktZIaA=";
+          type = "github";
+          owner = "google";
+          repo = "brotli";
+          rev = "d6d98957ca8ccb1ef45922e978bb10efca0ea541";
         };
 
         # This breaks on Darwin because our cmake hook tries to make a build folder
@@ -241,12 +271,15 @@
 
         outputs = [ "out" "dev" "man" "doc" ];
 
-        depsBuildHost = [ "autoreconfHook" ];
+        depsBuildHost = [
+          "autoreconfHook"
+        ];
 
         src = builtins.fetchTree {
-          type = "tarball";
-          url = "https://github.com/troglobit/${pname}/archive/${version}.tar.gz";
-          narHash = "sha256-ZiO8K8IiicF0b2XW9RQo+nA9Jz8UPMsaNLHKb7wgVW4=";
+          type = "github";
+          owner = "troglobit";
+          repo = "editline";
+          rev = "02cccd1e87b818cc0ac2ffab7b4bcc3e6cd9ba5a";
         };
       };
 
@@ -267,6 +300,10 @@
         pname = "sharutils";
         version = "4.15.2";
 
+        depsHostTarget = [
+          "gettext"
+        ];
+
         src = builtins.fetchTree {
           type = "tarball";
           url = "https://ftpmirror.gnu.org/${pname}/${pname}-${version}.tar.xz";
@@ -274,8 +311,6 @@
         };
 
         hardeningDisable = [ "format" ];
-
-        depsHostTarget = [ "gettext" ];
 
         postPatch = let shar_sub = "\${SHAR}";
         in ''
@@ -292,7 +327,9 @@
 
         outputs = [ "bin" "dev" "out" "man" ];
 
-        depsBuildHost = [ "autoreconfHook" ];
+        depsBuildHost = [
+          "autoreconfHook"
+        ];
 
         src = builtins.fetchTree {
           type = "tarball";
@@ -322,18 +359,39 @@
 
         outputs = [ "out" "lib" "dev" ];
 
-        depsBuildHost = [ "pkgconfig" "autoreconfHook" ];
-        depsHostTarget = [ "sharutils_" "zlib" "bzip2_" "openssl" "xz_" "lzo_" "zstd" "libxml2" ]
-          ++ optionals stdenv.hostPlatform.isLinux [ "e2fsprogs" "attr" "acl" ];
-        depsHostTargetPropagated = optionals stdenv.hostPlatform.isLinux [ "attr" "acl" ];
+        depsBuildHost = [
+          "pkgconfig"
+          "autoreconfHook"
+        ];
+        depsHostTarget = [
+          "sharutils_"
+          "zlib_"
+          "bzip2_"
+          "openssl"
+          "xz_"
+          "lzo_"
+          "zstd"
+          "libxml2"
+        ] ++ optionals stdenv.hostPlatform.isLinux [
+          "e2fsprogs"
+          "attr"
+          "acl"
+        ];
+        depsHostTargetPropagated = optionals stdenv.hostPlatform.isLinux [
+          "attr"
+          "acl"
+        ];
 
         src = builtins.fetchTree {
-          type = "tarball";
-          url = "https://github.com/${pname}/${pname}/archive/v${version}.tar.gz";
-          narHash = "sha256-QA/mC66N1ZFUR/LqI0iDaNbncGjxgisyvWb7b+4AG/g=";
+          type = "github";
+          owner = "libarchive";
+          repo = "libarchive";
+          rev = "fc6563f5130d8a7ee1fc27c0e55baef35119f26c";
         };
 
-        configureFlags = [ "--without-xml2" ];
+        configureFlags = [
+          "--without-xml2"
+        ];
 
         doCheck = false; # fails
       };
@@ -353,7 +411,245 @@
         configureFlags = [ "--enable-cplusplus" "--with-libatomic-ops=none" ];
       };
 
-      nix = { stdenv, ... }: rec {
+      readline_ = { ... }: rec {
+        pname = "readline";
+        version = "8.0";
+
+        outputs = [ "out" "dev" "man" "doc" "info" ];
+
+        src = builtins.fetchTree {
+          type = "tarball";
+          url = "https://ftpmirror.gnu.org/${pname}/${pname}-${version}.tar.gz";
+          narHash = "sha256-QpbRNFMiIoN3xtPThrqbtTyRDjVyK6rM5lsgfmBLbjs=";
+        };
+
+        depsBuildHost = [
+          "ncurses_"
+        ];
+      };
+
+      ncurses_ = { ... }: rec {
+        pname = "ncurses";
+        version = "6.2";
+
+        outputs = [ "out" "dev" "man" ];
+        setOutputFlags = false; # some aren't supported
+
+        depsBuildBuild = [
+          "stdenv.cc"
+        ];
+        depsBuildHost = [
+          "pkgconfig"
+        ];
+
+        src = builtins.fetchTree {
+          type = "github";
+          owner = "mirror";
+          repo = "ncurses";
+          rev = "47d2fb4537d9ad5bb14f4810561a327930ca4280";
+        };
+
+        preConfigure = ''
+          mkdir -p ${placeholder "dev"}/lib/pkgconfig
+        '';
+
+        configureFlags = [
+          "--without-debug"
+          "--enable-pc-files"
+          "--enable-symlinks"
+          "--with-manpage-format=normal"
+          "--disable-stripping"
+          "--with-abi-version=5"
+          "--enable-widec"
+          "--libdir=${placeholder "out"}/lib"
+          "--includedir=${placeholder "dev"}/include"
+          "--bindir=${placeholder "dev"}/bin"
+          "--mandir=${placeholder "man"}/share/man"
+          "--with-pkg-config-libdir=${placeholder "dev"}/lib/pkgconfig"
+        ];
+      };
+
+      help2man_ = { stdenv, perlPackages, ... }: rec {
+        pname = "help2man";
+        version = "1.47.15";
+
+        src = builtins.fetchTree {
+          type = "tarball";
+          url = "https://ftpmirror.gnu.org/${pname}/${pname}-${version}.tar.xz";
+          narHash = "sha256-qiVZ7aslQsbflemC1a8b28x9QSgC2WWIHA4ajiraD5I=";
+        };
+
+        depsBuildHost = [
+          "gettext"
+          "perlPackages.perl"
+          "perlPackages.LocaleGettext"
+        ];
+        depsHostTarget = [
+          "perlPackages.perl"
+          "perlPackages.LocaleGettext"
+        ];
+
+        doCheck = false; # target `check' is missing
+
+        # We don't use makeWrapper here because it uses substitutions our
+        # bootstrap shell can't handle.
+        postInstall = ''
+          mv $out/bin/help2man $out/bin/.help2man-wrapped
+          cat > $out/bin/help2man <<EOF
+          #! $SHELL -e
+          export PERL5LIB=\''${PERL5LIB:+:}${perlPackages.LocaleGettext}/${perlPackages.perl.libPrefix}
+          exec -a \$0 $out/bin/.help2man-wrapped "\$@"
+          EOF
+          chmod +x $out/bin/help2man
+        '';
+      };
+
+      bison_ = { stdenv, ... }: rec {
+        pname = "bison";
+        version = "3.6.3";
+
+        src = builtins.fetchTree {
+          type = "tarball";
+          url = "https://ftpmirror.gnu.org/${pname}/${pname}-${version}.tar.gz";
+          narHash = "sha256-sFlzAc+vrbCrQ/yQUwE+3erv0E2aDCk7lZoySVDZd60=";
+        };
+
+        depsBuildHost = [
+          "m4"
+          "perl"
+        ];
+        depsHostTargetPropagated = [
+          "m4"
+        ];
+
+        doCheck = false; # fails
+      };
+
+      flex_ = { stdenv, ... }: rec {
+        pname = "flex";
+        version = "2.6.4";
+
+        depsBuildBuild = [
+          "stdenv.cc"
+        ];
+        depsBuildHost = [
+          "autoreconfHook"
+          "help2man_"
+        ];
+        depsHostTarget = [
+          "bison_"
+        ];
+        depsHostTargetPropagated = [
+          "m4"
+        ];
+
+        src = builtins.fetchTree {
+          type = "tarball";
+          url = "https://github.com/westes/flex/releases/download/v${version}/flex-${version}.tar.gz";
+          narHash = "sha256-HBPAUDpqF4HYocMD3YDIk6OaIUrZw8Gk3K59OmHB6xU=";
+        };
+
+        postPatch = ''
+          patchShebangs tests
+        '' + stdenv.lib.optionalString (stdenv.buildPlatform != stdenv.hostPlatform) ''
+          substituteInPlace Makefile.in --replace "tests" " "
+          substituteInPlace doc/Makefile.am --replace 'flex.1: $(top_srcdir)/configure.ac' 'flex.1: '
+        '';
+
+      };
+
+      sqlite_ = { stdenv, ... }: rec {
+        pname = "sqlite";
+        version = "3.32.2";
+
+        outputs = [ "bin" "dev" "out" ];
+
+        src = builtins.fetchTree {
+          type = "tarball";
+          url = "https://sqlite.org/2020/sqlite-autoconf-3320300.tar.gz";
+          narHash = "sha256-4oPN/1njvKfqm0D4YWRuxTR20o0bLy418mp6+F2Y+3Q=";
+        };
+
+        depsBuildHost = [
+          "zlib_"
+          "readline_"
+          "ncurses_"
+        ];
+
+        configureFlags = [
+          "--enable-threadsafe"
+          "--enable-readline"
+        ];
+
+        doCheck = false; # fails to link against tcl
+
+        postInstall = ''
+          # Do not contaminate dependent libtool-based projects with sqlite dependencies.
+          sed -i $out/lib/libsqlite3.la -e "s/dependency_libs=.*/dependency_libs='''/"
+        '';
+      };
+
+      curl_ = { stdenv, openssl, libidn, c-ares, libkrb5, ... }: rec {
+        pname = "curl";
+        version = "7.70.0";
+
+        outputs = [ "bin" "dev" "out" "man" "devdoc" ];
+
+        depsBuildHost = [
+          "pkgconfig"
+          "perl"
+        ];
+        depsHostTargetPropagated = [
+          "nghttp2"
+          "libidn"
+          "zlib_"
+          "brotli_"
+          "c-ares"
+          "openssl"
+          "libkrb5"
+        ];
+
+        src = builtins.fetchTree {
+          type = "tarball";
+          url = "https://curl.haxx.se/download/${pname}-${version}.tar.bz2";
+          narHash = "sha256-VG+ppEPF7cDjfJoo0S5XCZbjKgv2Qz+k3hnFC3ao5gc=";
+        };
+
+        # for the second line see https://curl.haxx.se/mail/tracker-2014-03/0087.html
+        preConfigure = ''
+          sed -e 's|/usr/bin|/no-such-path|g' -i.bak configure
+          rm src/tool_hugehelp.c
+        '';
+
+        configureFlags = [
+          "--without-ca-bundle"
+          "--without-ca-path"
+          "--with-ca-fallback"
+          "--disable-manual"
+          "--with-ssl=${openssl.dev}"
+          "--with-libidn=${libidn.dev}"
+          "--with-brotli"
+          "--enable-ares=${c-ares}"
+          "--with-gssapi=${libkrb5.dev}"
+        ]
+        # For the 'urandom', maybe it should be a cross-system option
+        ++ stdenv.lib.optional (stdenv.hostPlatform != stdenv.buildPlatform)
+          "--with-random=/dev/urandom";
+
+        environment.CXX = "${stdenv.cc.targetPrefix}c++";
+        environment.CXXCPP = "${stdenv.cc.targetPrefix}c++ -E";
+
+        doCheck = false; # expensive, fails
+
+        postInstall = ''
+          moveToOutput bin/curl-config "$dev"
+
+          # Install completions
+          make -C scripts install
+        '';
+      };
+
+      nix_ = { stdenv, ... }: rec {
         pname = "nix";
         version = "2.4pre20200622_334e26b";
 
@@ -363,8 +659,8 @@
           "pkgconfig"
           "autoreconfHook"
           "autoconf-archive"
-          "bison"
-          "flex"
+          "bison_"
+          "flex_"
           "libxml2"
           "libxslt_"
           "docbook5"
@@ -372,9 +668,9 @@
           "jq_"
         ];
         depsHostTarget = [
-          "curl"
+          "curl_"
           "openssl"
-          "sqlite"
+          "sqlite_"
           "xz_"
           "bzip2_"
           "nlohmann_json_"
@@ -385,12 +681,15 @@
           "libarchive_"
           "gtest"
         ] ++ optional stdenv.hostPlatform.isLinux "libseccomp";
-        depsHostTargetPropagated = [ "boehmgc_" ];
+        depsHostTargetPropagated = [
+          "boehmgc_"
+        ];
 
         src = builtins.fetchTree {
-          type = "tarball";
-          url = "https://github.com/NixOS/${pname}/archive/334e26bfc2ce82912602e8a0f9f9c7e0fb5c3221.tar.gz";
-          narHash = "14a2yyn1ygymlci6hl5d308fs3p3m0mgcfs5dc8dn0s3lg5qvbmp";
+          type = "github";
+          owner = "NixOS";
+          repo = "nix";
+          rev = "334e26bfc2ce82912602e8a0f9f9c7e0fb5c3221";
         };
 
         configureFlags = [
