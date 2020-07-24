@@ -411,64 +411,6 @@
         configureFlags = [ "--enable-cplusplus" "--with-libatomic-ops=none" ];
       };
 
-      readline_ = { ... }: rec {
-        pname = "readline";
-        version = "8.0";
-
-        outputs = [ "out" "dev" "man" "doc" "info" ];
-
-        src = builtins.fetchTree {
-          type = "tarball";
-          url = "https://ftpmirror.gnu.org/${pname}/${pname}-${version}.tar.gz";
-          narHash = "sha256-QpbRNFMiIoN3xtPThrqbtTyRDjVyK6rM5lsgfmBLbjs=";
-        };
-
-        depsBuildHost = [
-          "ncurses_"
-        ];
-      };
-
-      ncurses_ = { ... }: rec {
-        pname = "ncurses";
-        version = "6.2";
-
-        outputs = [ "out" "dev" "man" ];
-        setOutputFlags = false; # some aren't supported
-
-        depsBuildBuild = [
-          "stdenv.cc"
-        ];
-        depsBuildHost = [
-          "pkgconfig"
-        ];
-
-        src = builtins.fetchTree {
-          type = "github";
-          owner = "mirror";
-          repo = "ncurses";
-          rev = "47d2fb4537d9ad5bb14f4810561a327930ca4280";
-        };
-
-        preConfigure = ''
-          mkdir -p ${placeholder "dev"}/lib/pkgconfig
-        '';
-
-        configureFlags = [
-          "--without-debug"
-          "--enable-pc-files"
-          "--enable-symlinks"
-          "--with-manpage-format=normal"
-          "--disable-stripping"
-          "--with-abi-version=5"
-          "--enable-widec"
-          "--libdir=${placeholder "out"}/lib"
-          "--includedir=${placeholder "dev"}/include"
-          "--bindir=${placeholder "dev"}/bin"
-          "--mandir=${placeholder "man"}/share/man"
-          "--with-pkg-config-libdir=${placeholder "dev"}/lib/pkgconfig"
-        ];
-      };
-
       help2man_ = { stdenv, perlPackages, ... }: rec {
         pname = "help2man";
         version = "1.47.15";
@@ -504,60 +446,6 @@
         '';
       };
 
-      bison_ = { stdenv, ... }: rec {
-        pname = "bison";
-        version = "3.6.3";
-
-        src = builtins.fetchTree {
-          type = "tarball";
-          url = "https://ftpmirror.gnu.org/${pname}/${pname}-${version}.tar.gz";
-          narHash = "sha256-sFlzAc+vrbCrQ/yQUwE+3erv0E2aDCk7lZoySVDZd60=";
-        };
-
-        depsBuildHost = [
-          "m4"
-          "perl"
-        ];
-        depsHostTargetPropagated = [
-          "m4"
-        ];
-
-        doCheck = false; # fails
-      };
-
-      flex_ = { stdenv, ... }: rec {
-        pname = "flex";
-        version = "2.6.4";
-
-        depsBuildBuild = [
-          "stdenv.cc"
-        ];
-        depsBuildHost = [
-          "autoreconfHook"
-          "help2man_"
-        ];
-        depsHostTarget = [
-          "bison_"
-        ];
-        depsHostTargetPropagated = [
-          "m4"
-        ];
-
-        src = builtins.fetchTree {
-          type = "tarball";
-          url = "https://github.com/westes/flex/releases/download/v${version}/flex-${version}.tar.gz";
-          narHash = "sha256-HBPAUDpqF4HYocMD3YDIk6OaIUrZw8Gk3K59OmHB6xU=";
-        };
-
-        postPatch = ''
-          patchShebangs tests
-        '' + stdenv.lib.optionalString (stdenv.buildPlatform != stdenv.hostPlatform) ''
-          substituteInPlace Makefile.in --replace "tests" " "
-          substituteInPlace doc/Makefile.am --replace 'flex.1: $(top_srcdir)/configure.ac' 'flex.1: '
-        '';
-
-      };
-
       sqlite_ = { stdenv, ... }: rec {
         pname = "sqlite";
         version = "3.32.2";
@@ -572,8 +460,8 @@
 
         depsBuildHost = [
           "zlib_"
-          "readline_"
-          "ncurses_"
+          "readline"
+          "ncurses"
         ];
 
         configureFlags = [
@@ -659,8 +547,8 @@
           "pkgconfig"
           "autoreconfHook"
           "autoconf-archive"
-          "bison_"
-          "flex_"
+          "bison"
+          "flex"
           "libxml2"
           "libxslt_"
           "docbook5"

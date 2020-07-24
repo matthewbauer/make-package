@@ -139,6 +139,7 @@ let
       (disallowEnvironment "buildPhase")
       (disallowEnvironment "checkPhase")
       (disallowEnvironment "fixupPhase")
+      # TODO: error any time something in environment is overriden
       (requireType "pname" "string")
       (requireType "version" "string")
       (requireType "setOutputFlags" "bool")
