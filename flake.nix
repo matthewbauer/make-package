@@ -330,31 +330,6 @@
         };
       };
 
-      sharutils_ = { ... }: rec {
-        pname = "sharutils";
-        version = "4.15.2";
-
-        depsHostTarget = [
-          "gettext"
-        ];
-
-        src = fetchTree {
-          type = "tarball";
-          url = "https://ftpmirror.gnu.org/${pname}/${pname}-${version}.tar.xz";
-          narHash = "sha256-YFELWBex9FtGDqT4bWhnbtgkyR0NwJWGM/e96spa4Bs=";
-        };
-
-        hardeningDisable = [ "format" ];
-
-        postPatch = let shar_sub = "\${SHAR}";
-        in ''
-              substituteInPlace tests/shar-1 --replace '${shar_sub}' '${shar_sub} -s submitter'
-              substituteInPlace tests/shar-2 --replace '${shar_sub}' '${shar_sub} -s submitter'
-
-              substituteInPlace intl/Makefile.in --replace "AR = ar" ""
-        '';
-      };
-
       bzip2_ = { ... }: rec {
         pname = "bzip2";
         version = "1.0.6.0.1";
@@ -385,49 +360,6 @@
           url = "http://www.oberhumer.com/opensource/lzo/download/${pname}-${version}.tar.gz";
           narHash = "sha256-NKNBFisxtCfm/MTmAI9pVHxMzZ+fR0GRPI9qH0Uhj/o=";
         };
-      };
-
-      libarchive_ = { stdenv, ... }: rec {
-        pname = "libarchive";
-        version = "3.4.3";
-
-        outputs = [ "out" "lib" "dev" ];
-
-        depsBuildHost = [
-          "pkgconfig"
-          "autoreconfHook"
-        ];
-        depsHostTarget = [
-          "sharutils_"
-          "zlib_"
-          "bzip2_"
-          "openssl"
-          "xz_"
-          "lzo_"
-          "zstd"
-          "libxml2"
-        ] ++ optionals stdenv.hostPlatform.isLinux [
-          "e2fsprogs"
-          "attr"
-          "acl"
-        ];
-        depsHostTargetPropagated = optionals stdenv.hostPlatform.isLinux [
-          "attr"
-          "acl"
-        ];
-
-        src = fetchTree {
-          type = "github";
-          owner = "libarchive";
-          repo = "libarchive";
-          rev = "fc6563f5130d8a7ee1fc27c0e55baef35119f26c";
-        };
-
-        configureFlags = [
-          "--without-xml2"
-        ];
-
-        doCheck = false; # fails
       };
 
       boehmgc_ = { ... }: rec {
@@ -600,7 +532,7 @@
           "boost"
           "editline_"
           "libsodium_"
-          "libarchive_"
+          "libarchive"
           "gtest"
         ] ++ optional stdenv.hostPlatform.isLinux "libseccomp";
         depsHostTargetPropagated = [
