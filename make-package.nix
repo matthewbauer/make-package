@@ -117,6 +117,7 @@ let
             else if (attrByPath (splitString "." package) null packages' != null) then attrByPath (splitString "." package) null packages'
             else throw "Could not find '${package}'. Dependencies of makePackage should also be created with makePackage.")
       else if (package ? packageFun) then makePackage' (package.packageFun packages' // { packages = packages'; })
+      else if (package ? defaultPackage && builtins.hasAttr system package.defaultPackage && package.defaultPackage.${system} ? packageFun) then makePackage' (package.defaultPackage.${system}.packageFun packages' // { packages = packages'; })
       else throw "dependencies must be specified as either a package or a string identifier";
 
     depsBuildBuild' = flatten (map (splicePackage (-1) (-1) false) depsBuildBuild);
