@@ -211,7 +211,7 @@ let
       source $stdenv/setup
       genericBuild
     '' + optionalString separateDebugInfo ''
-      mkdir $debug # hack to ensure debug always exists
+      mkdir -p $debug # hack to ensure debug always exists
     '')) ];
 
     # inputs
