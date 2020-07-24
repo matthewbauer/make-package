@@ -18,6 +18,7 @@ and callPackage.
 - custom phases like buildCommand, unpackPhase, buildPhase, etc. are
   disallowed; new phases should be defined in reusable “setup hooks”
 - check phase is enabled by default
+- parallel building and checking is enabeld by default
 - separate debug info is enabled by default
 - installCheck and dist phases are removed; these should be done in a
   separate derivation
@@ -30,6 +31,9 @@ that requires changes to Nixpkgs
 
 - splicing happens explicitly: the arguments passed in are always from
   pkgsHostTarget, while "deps" must be string identifiers
+- a copy of the package function is saved so that it can be reapplied
+  later for things like override and overrideAttrs
+- package functions use the { ... } syntax instead of guessing what to supply
 
 ** Example
 
@@ -94,3 +98,5 @@ For example, a flake for Nix would look like:
   };
 }
 #+END_SRC
+
+More examples are available in “checks” of flake.nix.
