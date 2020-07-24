@@ -106,7 +106,7 @@
           pname = "oniguruma";
           version = "6.9.5_rev1";
 
-          depsBuildHost = [
+          nativeBuildInputs = [
             "autoreconfHook"
           ];
 
@@ -118,16 +118,14 @@
         };
       };
     in self.makePackagesFlake' { } {
-      inherit oniguruma_;
-
       jq_ = { ... }: rec {
         pname = "jq";
         version = "1.6";
 
         outputs = [ "bin" "doc" "man" "dev" "lib" "out" ];
 
-        depsHostTarget = [
-          "oniguruma_"
+        buildInputs = [
+          oniguruma_
         ];
 
         src = fetchTree {
@@ -192,10 +190,10 @@
 
         outputs = [ "bin" "dev" "out" "man" "doc" ];
 
-        depsHostTargetPropagated = [
+        propagatedBuildInputs = [
           "findXMLCatalogs"
         ];
-        depsHostTarget = [
+        buildInputs = [
           "libxml2"
           "gettext"
         ];
@@ -275,7 +273,7 @@
 
         outputs = [ "out" "dev" "lib" ];
 
-        depsBuildHost = [
+        nativeBuildInputs = [
           "cmake"
         ];
 
@@ -305,7 +303,7 @@
 
         outputs = [ "out" "dev" "man" "doc" ];
 
-        depsBuildHost = [
+        nativeBuildInputs = [
           "autoreconfHook"
         ];
 
@@ -336,7 +334,7 @@
 
         outputs = [ "bin" "dev" "out" "man" ];
 
-        depsBuildHost = [
+        nativeBuildInputs = [
           "autoreconfHook"
         ];
 
@@ -387,12 +385,12 @@
           narHash = "sha256-qiVZ7aslQsbflemC1a8b28x9QSgC2WWIHA4ajiraD5I=";
         };
 
-        depsBuildHost = [
+        nativeBuildInputs = [
           "gettext"
           "perlPackages.perl"
           "perlPackages.LocaleGettext"
         ];
-        depsHostTarget = [
+        buildInputs = [
           "perlPackages.perl"
           "perlPackages.LocaleGettext"
         ];
@@ -412,7 +410,7 @@
         '';
       };
 
-      sqlite_ = { stdenv, ... }: rec {
+      sqlite_ = { stdenv, zlib_, ... }: rec {
         pname = "sqlite";
         version = "3.32.2";
 
@@ -424,8 +422,8 @@
           narHash = "sha256-4oPN/1njvKfqm0D4YWRuxTR20o0bLy418mp6+F2Y+3Q=";
         };
 
-        depsBuildHost = [
-          "zlib_"
+        nativeBuildInputs = [
+          zlib_
           "readline"
           "ncurses"
         ];
@@ -449,11 +447,11 @@
 
         outputs = [ "bin" "dev" "out" "man" "devdoc" ];
 
-        depsBuildHost = [
+        nativeBuildInputs = [
           "pkgconfig"
           "perl"
         ];
-        depsHostTargetPropagated = [
+        buildInputs = [
           "nghttp2"
           "libidn"
           "zlib_"
@@ -509,7 +507,7 @@
 
         outputs = [ "out" "dev" "man" "doc" ];
 
-        depsBuildHost = [
+        nativeBuildInputs = [
           "pkgconfig"
           "autoreconfHook"
           "autoconf-archive"
@@ -521,7 +519,7 @@
           "docbook_xsl_ns"
           "jq_"
         ];
-        depsHostTarget = [
+        buildInputs = [
           "curl_"
           "openssl"
           "sqlite_"
@@ -535,7 +533,7 @@
           "libarchive"
           "gtest"
         ] ++ optional stdenv.hostPlatform.isLinux "libseccomp";
-        depsHostTargetPropagated = [
+        propagatedBuildInputs = [
           "boehmgc_"
         ];
 

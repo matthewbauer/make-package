@@ -52,7 +52,7 @@ For example, a flake for Nix would look like:
 
       outputs = [ "out" "dev" "man" "doc" ];
 
-      depsBuildHost = [
+      nativeBuildInputs = [
         "pkgconfig"
         "autoreconfHook"
         "autoconf-archive"
@@ -64,7 +64,7 @@ For example, a flake for Nix would look like:
         "docbook_xsl_ns"
         "jq"
       ];
-      depsHostTarget = [
+      buildInputs = [
         "curl"
         "openssl"
         "sqlite"
@@ -78,7 +78,9 @@ For example, a flake for Nix would look like:
         "libarchive"
         "gtest"
       ] ++ stdenv.lib.optional stdenv.hostPlatform.isLinux "libseccomp";
-      depsHostTargetPropagated = [ "boehmgc" ];
+      propagatedBuildInputs = [
+        "boehmgc"
+      ];
 
       src = self;
 
@@ -123,7 +125,7 @@ Then, we can have another flake which depends on it directly:
       depsBuildBuild = [
         "pkgconfig"
       ];
-      depsBuildHost = [
+      nativeBuildInputs = [
         "vala"
         "intltool"
         "pkgconfig"
@@ -134,7 +136,7 @@ Then, we can have another flake which depends on it directly:
         "libxslt"
         "ninja"
       ];
-      depsHostTarget = [
+      buildInputs = [
         "glib"
         "polkit"
         "python3"
@@ -145,7 +147,7 @@ Then, we can have another flake which depends on it directly:
         "gst_all_1.gst-plugins-base"
         "gtk3"
       ];
-      depsHostTargetPropagated = [
+      propagatedBuildInputs = [
         "sqlite"
         "boost"
         "nix"
