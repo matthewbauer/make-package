@@ -30,26 +30,49 @@ let
   , configurePlatforms ? [ "build" "host" "target" ]
   , preConfigure ? "", postConfigure ? ""
   , dontDisableStatic ? false, dontAddDisableDepTrack ? false, dontAddPrefix ? false, dontFixLibtool ? false
-  , cmakeFlags ? []
-  , mesonFlags ? []
+
+    # build system specific configure phase options, we should
+    # probably verify the user actually has an input with these flags
+    # TODO: maybe put these options in some nix-level setupHook attset
+  , autoreconfFlags ? []
+  , cmakeFlags ? [], cmakeDir ? null, dontUseCmakeConfigure ? false, dontFixCmake ? false
+  , mesonFlags ? [], dontUseMesonConfigure ? false
+  , dontUseGnConfigure ? false
+  , premakeFlags ? [], premakefile ? null, premakeBackend ? "gmake"
+  , sconsFlags ? []
+  , wafFlags ? [], dontUseWafConfigure ? false
+  , dontUseTupConfigure ? false
 
     # build phase
   , dontBuild ? false, enableParallelBuilding ? true, makeFlags ? [], makefile ? null
   , preBuild ? "", postBuild ? ""
   , hardeningEnable ? [], hardeningDisable ? []
+  , ninjaFlags ? []
 
     # check phase
   , doCheck ? true, enableParallelChecking ? true, checkTarget ? null
   , preCheck ? "", postCheck ? ""
+  , dontUseNinjaCheck ? false
 
     # install phase
   , dontInstall ? false, installFlags ? []
   , preInstall ? "", postInstall ? ""
+  , dontUseNinjaInstall ? false
+  , dontUseSconsInstall ? false
 
     # fixup phase
   , dontFixup ? false, setupHooks ? []
-  , separateDebugInfo ? !stdenv.hostPlatform.isDarwin # broken on macOS
   , preFixup ? "", postFixup ? ""
+
+    # FIXME: some of these aren’t enabled by default, we should make
+    # it clear which is which
+  , separateDebugInfo ? !stdenv.hostPlatform.isDarwin # broken on macOS
+  , dontPatchELF ? false, dontAddExtraLibs ? false, noAuditTmpdir ? false, runtimeDependencies ? []
+  , dontAutoPatchelf ? false, dontGzipMan ? false, lcovFilter ? [], lcovExtraTraceFiles ? []
+  , dontRewriteSymlinks ? false, forceShare ? [], dontMoveLib64 ? false, dontMoveSbin ? false
+  , propagatedBuildOutputs ? [], dontPatchShebangs ? false, dontPruneLibtoolFiles ? false
+  , stripDebugList ? [], dontStrip ? false, stripDebugFlags ? [], stripAllFlags ? [], stripAllList ? []
+  , dontUpdateAutotoolsGnuConfigScripts ? false, wrapPrefixVariables ? [], dontWrapGApps ? false, gappsWrapperArgs ? []
 
     # inputs
   , buildInputs ? [], propagatedBuildInputs ? []
@@ -76,6 +99,8 @@ let
     # miscellaneous
   , allowSubstitutes ? true, preferLocalBuild ? false, passAsFile ? []
   , outputHash ? null, outputHashAlgo ? null, outputHashMode ? null
+
+  , dontAddPythonPath ? false
   } @ attrs: let
 
     # TODO: this should run closePropagation to get propagated build inputs in drv
@@ -151,7 +176,14 @@ let
         "enableParallelChecking" "checkTarget" "preCheck" "postCheck" "dontInstall" "installFlags" "preInstall"
         "postInstall" "dontFixup" "preFixup" "postFixup" "setupHooks" "doInstallCheck" "doDist" "NIX_DEBUG"
         "showBuildStats" "allowSubstitutes" "preferLocalBuild" "passAsFile" "outputHash" "outputHashAlgo"
-        "outputHashMode" "impureEnvVars"
+        "outputHashMode" "impureEnvVars" "cmakeDir" "dontUseCmakeConfigure" "dontFixCmake" "dontPatchELF"
+        "ninjaFlags" "ninjaFlags" "dontUseNinjaCheck" "dontUseNinjaInstall" "premakeFlags" "premakefile"
+        "premakeBackend""dontUseGnConfigure" "dontUseSconsInstall" "sconsFlags" "wafFlags" "dontUseWafConfigure"
+        "dontUseTupConfigure" "dontAddExtraLibs" "noAuditTmpdir" "autoreconfFlags" "runtimeDependencies"
+        "dontAutoPatchelf" "dontGzipMan" "lcovFilter" "lcovExtraTraceFiles" "dontRewriteSymlinks" "forceShare"
+        "dontMoveLib64" "dontMoveSbin" "propagatedBuildOutputs" "dontPatchShebangs" "dontPruneLibtoolFiles"
+        "stripDebugList" "dontStrip" "stripDebugFlags" "stripAllFlags" "stripAllList"
+        "dontUpdateAutotoolsGnuConfigScripts" "wrapPrefixVariables" "dontWrapGApps" "gappsWrapperArgs"
       ]) ++ [
       (requireType "pname" "string")
       (requireType "version" "string")
@@ -173,11 +205,23 @@ let
       (requireType "dontDisableStatic" "bool")
       (requireType "dontAddDisableDepTrack" "bool")
       (requireType "dontAddPrefix" "bool")
+      (requireType "dontUpdateAutotoolsGnuConfigScripts" "bool")
       (requireType "dontFixLibtool" "bool")
+      (requireType "autoreconfFlags" "list")
+      (requireListType "autoreconfFlags" "string")
       (requireType "cmakeFlags" "list")
       (requireListType "cmakeFlags" "string")
       (requireType "mesonFlags" "list")
       (requireListType "mesonFlags" "string")
+      (requireType "dontUseMesonConfigure" "bool")
+      (requireType "dontUseGnConfigure" "bool")
+      (requireType "dontUseSconsInstall" "bool")
+      (requireType "dontUseWafConfigure" "bool")
+      (requireType "dontUseTupConfigure" "bool")
+      (requireType "wafFlags" "list")
+      (requireListType "wafFlags" "string")
+      (requireType "sconsFlags" "list")
+      (requireListType "sconsFlags" "string")
       (requireType "dontBuild" "bool")
       (requireType "enableParallelBuilding" "bool")
       (requireType "makeFlags" "list")
@@ -194,6 +238,8 @@ let
       (requireType "dontInstall" "bool")
       (requireType "installFlags" "list")
       (requireListType "installFlags" "string")
+      (requireType "installTargets" "list")
+      (requireListType "installTargets" "string")
       (requireType "preInstall" "string")
       (requireType "postInstall" "string")
       (requireType "dontFixup" "bool")
@@ -223,6 +269,35 @@ let
       (requireType "environment" "set")
       (requireType "configurePlatforms" "list")
       (requireListOf "configurePlatforms" ["build" "host" "target"])
+      (requireType "dontUseCmakeConfigure" "bool")
+      (requireType "dontFixCmake" "bool")
+      (requireType "ninjaFlags" "list")
+      (requireListOf "ninjaFlags" "string")
+      (requireType "dontUseNinjaCheck" "bool")
+      (requireType "dontUseNinjaInstall" "bool")
+      (requireType "dontPatchELF" "bool")
+      (requireType "dontAddExtraLibs" "bool")
+      (requireType "noAuditTmpDir" "bool")
+      (requireType "runtimeDependencies" "list")
+      (requireType "dontAddPatchelf" "bool")
+      (requireType "dontGzipMan" "bool")
+      (requireType "lcovFilter" "string")
+      (requireType "lcovExtraTraceFiles" "list")
+      (requireType "dontRewriteSymlinks" "bool")
+      (requireType "forceShare" "list")
+      (requireType "dontMoveLib64" "bool")
+      (requireType "dontMoveSbin" "bool")
+      (requireType "propagatedBuildOutputs" "list")
+      (requireType "dontPatchShebangs" "bool")
+      (requireType "dontPruneLibtoolFiles" "bool")
+      (requireType "dontStrip" "bool")
+      (requireType "stripDebugList" "list")
+      (requireType "stripDebugFlags" "list")
+      (requireType "stripAllFlags" "list")
+      (requireType "stripAllList" "list")
+      (requireType "wrapPrefixVariables" "list")
+      (requireType "dontWrapGApps" "bool")
+      (requireType "gappsWrapperArgs" "list")
     ]);
 
   in if errMessages == [] then ((derivation (environment // {
@@ -297,6 +372,12 @@ let
       "-DCMAKE_HOST_SYSTEM_VERSION=${if (stdenv.buildPlatform.uname.release or null != null)
                                      then stdenv.buildPlatform.uname.release else ""}"
     ] ++ cmakeFlags;
+    inherit cmakeDir dontUseCmakeConfigure dontFixCmake;
+    inherit dontAddExtraLibs autoreconfFlags dontUpdateAutotoolsGnuConfigScripts;
+    inherit dontUseGnConfigure;
+    inherit dontUseSconsInstall sconsFlags;
+    inherit wafFlags dontUseWafConfigure;
+    inherit dontUseTupConfigure;
 
     mesonFlags = [ "--cross-file=${builtins.toFile "cross-file.conf" ''
       [properties]
@@ -313,9 +394,12 @@ let
       cpu = '${stdenv.hostPlatform.parsed.cpu.name}'
       endian = '${if stdenv.hostPlatform.isLittleEndian then "little" else "big"}'
     ''}" ] ++ mesonFlags;
+    inherit dontUseMesonConfigure;
+    inherit premakeFlags premakefile premakeBackend;
 
     # build
     inherit dontBuild makeFlags enableParallelBuilding makefile preBuild postBuild;
+    inherit ninjaFlags;
     NIX_HARDENING_ENABLE = if builtins.elem "all" hardeningDisable then []
       else subtractLists hardeningDisable (
         hardeningEnable ++ [ "fortify" "stackprotector" "pic" "strictoverflow" "format" "relro" "bindnow" ]
@@ -323,12 +407,20 @@ let
 
     # check
     inherit doCheck enableParallelChecking checkTarget preCheck postCheck;
+    inherit dontUseNinjaCheck;
 
     # install
     inherit dontInstall installFlags preInstall postInstall;
+    inherit dontUseNinjaInstall;
 
     # fixup
     inherit dontFixup preFixup postFixup setupHooks;
+    inherit dontPatchELF runtimeDependencies dontAutoPatchelf propagatedBuildOutputs;
+    inherit forceShare dontMoveLib64 dontMoveSbin;
+    inherit stripDebugList dontStrip stripDebugFlags stripAllFlags stripAllList;
+    inherit dontGzipMan lcovFilter lcovExtraTraceFiles dontRewriteSymlinks dontPatchShebangs dontPruneLibtoolFiles;
+    inherit wrapPrefixVariables dontWrapGApps gappsWrapperArgs;
+    inherit noAuditTmpdir;
 
     # installCheck and dist phases should not be run in a package
     # use another derivation instead
