@@ -6,7 +6,9 @@ let
   getAllOutputs = f: flatten (map (x: map (name: getOutput name x) x.outputs) f);
 
   makePackage' = {
-    pname, version, outputs ? ["out"]
+    pname, version
+
+  , outputs ? ["out"], setOutputFlags ? true
 
     # system
   , packages, system ? stdenv.buildPlatform.system, stdenv ? packages.stdenv
@@ -197,7 +199,10 @@ let
   in if errMessages == [] then ((derivation (environment // {
     inherit system;
     name = "${pname}-${version}";
+
     outputs = outputs ++ optional separateDebugInfo "debug";
+    inherit setOutputFlags;
+
     __ignoreNulls = true;
 
     # requires https://github.com/NixOS/nixpkgs/pull/85042
