@@ -11,6 +11,40 @@
       ) (builtins.attrNames f)
     ));
     allSystems = [ "x86_64-linux" "i686-linux" "x86_64-darwin" "aarch64-linux" ];
+
+    # compat for non-flakes Nix (taken from https://github.com/edolstra/flake-compat)
+    fetchTree = builtins.fetchTree or (info:
+    if info.type == "github" then
+        { outPath = fetchTarball "https://api.github.com/repos/${info.owner}/${info.repo}/tarball/${info.rev}";
+          rev = info.rev;
+          shortRev = builtins.substring 0 7 info.rev;
+          narHash = info.narHash or null;
+        }
+      else if info.type == "git" then
+        { outPath =
+            builtins.fetchGit
+              ({ url = info.url; }
+               // (if info ? rev then { inherit (info) rev; } else {})
+               // (if info ? ref then { inherit (info) ref; } else {})
+              );
+          rev = info.rev;
+          shortRev = builtins.substring 0 7 info.rev;
+          narHash = info.narHash or null;
+        }
+      else if info.type == "tarball" then
+        { outPath =
+            builtins.fetchTarball
+              ({
+                url = info.url;
+              }
+               // (if (info ? narHash && (builtins.substring 0 7 info.narHash) == "sha256-") then { sha256 = builtins.substring 7 (builtins.stringLength info.narHash - 7) info.narHash; } else {})
+              );
+          narHash = info.narHash or null;
+        }
+      else
+        # FIXME: add Mercurial, tarball inputs.
+        throw "flake input has unsupported input type '${info.type}'"
+    );
   in {
     overlay = final: prev: { makePackage = self.makePackage prev; };
 
@@ -76,7 +110,7 @@
             "autoreconfHook"
           ];
 
-          src = builtins.fetchTree {
+          src = fetchTree {
             type = "tarball";
             url = "https://github.com/kkos/${pname}/archive/v${version}.tar.gz";
             narHash = "sha256-FErm0z2ZlxR7ctMtrCOWEPPf+i42GUW3XA+VteBApus=";
@@ -96,7 +130,7 @@
           "oniguruma_"
         ];
 
-        src = builtins.fetchTree {
+        src = fetchTree {
           type = "tarball";
           url = "https://github.com/stedolan/${pname}/releases/download/${pname}-${version}/${pname}-${version}.tar.gz";
           narHash = "sha256-Jb9kV1htQpc6EXTCgn0tSTCmCnxkpOBf/YQ2gCwQipc=";
@@ -116,7 +150,7 @@
         pname = "hello";
         version = "2.10";
 
-        src = builtins.fetchTree {
+        src = fetchTree {
           type = "tarball";
           url = "https://ftpmirror.gnu.org/${pname}/${pname}-${version}.tar.gz";
           narHash = "sha256-tBws6cfY1e23oTv3qu2Oc1Q6ev1YtUrgAmGS6uh7ocY=";
@@ -131,7 +165,7 @@
         setOutputFlags = false;
         outputDoc = "dev"; # single tiny man3 page
 
-        src = builtins.fetchTree {
+        src = fetchTree {
           type = "tarball";
           url = "https://www.zlib.net/fossils/${pname}-${version}.tar.gz";
           narHash = "sha256-AQIoy96jcdmKs/F4GVqDFXxcZ7c66GF+yalHg3ALEyU=";
@@ -166,7 +200,7 @@
           "gettext"
         ];
 
-        src = builtins.fetchTree {
+        src = fetchTree {
           type = "tarball";
           url = "http://xmlsoft.org/sources/${pname}-${version}.tar.gz";
           narHash = "sha256-EFJsKI18L8mYJvawaqjR1MqsMJTz0XssKNVsNdVW9MM=";
@@ -192,7 +226,7 @@
 
         outputs = [ "bin" "dev" "out" "man" "doc" ];
 
-        src = builtins.fetchTree {
+        src = fetchTree {
           type = "tarball";
           url = "https://tukaani.org/xz/${pname}-${version}.tar.bz2";
           narHash = "sha256-lYaLeAyhlQuj+yfs71wlA+lhNVFu69PiPTu+4tu1u2I=";
@@ -217,7 +251,7 @@
           "cmake"
         ];
 
-        src = builtins.fetchTree {
+        src = fetchTree {
           type = "github";
           owner = "nlohmann";
           repo = "json";
@@ -245,7 +279,7 @@
           "cmake"
         ];
 
-        src = builtins.fetchTree {
+        src = fetchTree {
           type = "github";
           owner = "google";
           repo = "brotli";
@@ -275,7 +309,7 @@
           "autoreconfHook"
         ];
 
-        src = builtins.fetchTree {
+        src = fetchTree {
           type = "github";
           owner = "troglobit";
           repo = "editline";
@@ -289,7 +323,7 @@
 
         outputs = [ "out" "dev" ];
 
-        src = builtins.fetchTree {
+        src = fetchTree {
           type = "tarball";
           url = "https://download.${pname}.org/${pname}/releases/${pname}-${version}.tar.gz";
           narHash = "sha256-58vNr1SKoLKC/YBPUH5pFmCm+7dLxKukXKHP7GTUNGo=";
@@ -304,7 +338,7 @@
           "gettext"
         ];
 
-        src = builtins.fetchTree {
+        src = fetchTree {
           type = "tarball";
           url = "https://ftpmirror.gnu.org/${pname}/${pname}-${version}.tar.xz";
           narHash = "sha256-YFELWBex9FtGDqT4bWhnbtgkyR0NwJWGM/e96spa4Bs=";
@@ -331,7 +365,7 @@
           "autoreconfHook"
         ];
 
-        src = builtins.fetchTree {
+        src = fetchTree {
           type = "tarball";
           url = "http://ftp.uni-kl.de/pub/linux/suse/people/sbrabec/${pname}/tarballs/${pname}-${version}.tar.gz";
           narHash = "sha256-XbJmgxrZPzgHGLOHBa9U3l58D9rEkn6OUJ6atepcoUg=";
@@ -346,7 +380,7 @@
         pname = "lzo";
         version = "2.10";
 
-        src = builtins.fetchTree {
+        src = fetchTree {
           type = "tarball";
           url = "http://www.oberhumer.com/opensource/lzo/download/${pname}-${version}.tar.gz";
           narHash = "sha256-NKNBFisxtCfm/MTmAI9pVHxMzZ+fR0GRPI9qH0Uhj/o=";
@@ -382,7 +416,7 @@
           "acl"
         ];
 
-        src = builtins.fetchTree {
+        src = fetchTree {
           type = "github";
           owner = "libarchive";
           repo = "libarchive";
@@ -402,7 +436,7 @@
 
         outputs = [ "out" "dev" "doc" ];
 
-        src = builtins.fetchTree {
+        src = fetchTree {
           type = "tarball";
           url = "https://github.com/ivmai/bdwgc/releases/download/v${version}/gc-${version}.tar.gz";
           narHash = "sha256-Z8rvI7Z5JapHzPMruqyP4o03Mx59I0QZLTkU7ngrLJo=";
@@ -415,7 +449,7 @@
         pname = "help2man";
         version = "1.47.15";
 
-        src = builtins.fetchTree {
+        src = fetchTree {
           type = "tarball";
           url = "https://ftpmirror.gnu.org/${pname}/${pname}-${version}.tar.xz";
           narHash = "sha256-qiVZ7aslQsbflemC1a8b28x9QSgC2WWIHA4ajiraD5I=";
@@ -452,7 +486,7 @@
 
         outputs = [ "bin" "dev" "out" ];
 
-        src = builtins.fetchTree {
+        src = fetchTree {
           type = "tarball";
           url = "https://sqlite.org/2020/sqlite-autoconf-3320300.tar.gz";
           narHash = "sha256-4oPN/1njvKfqm0D4YWRuxTR20o0bLy418mp6+F2Y+3Q=";
@@ -497,7 +531,7 @@
           "libkrb5"
         ];
 
-        src = builtins.fetchTree {
+        src = fetchTree {
           type = "tarball";
           url = "https://curl.haxx.se/download/${pname}-${version}.tar.bz2";
           narHash = "sha256-VG+ppEPF7cDjfJoo0S5XCZbjKgv2Qz+k3hnFC3ao5gc=";
@@ -573,7 +607,7 @@
           "boehmgc_"
         ];
 
-        src = builtins.fetchTree {
+        src = fetchTree {
           type = "github";
           owner = "NixOS";
           repo = "nix";
