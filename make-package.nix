@@ -207,10 +207,6 @@ let
     inherit stdenv;
     builder = stdenv.shell;
     args = [ "-e" (builtins.toFile "builder.sh" (''
-      runPhase() {
-        local phase="$1"
-        eval "''${!phase:-$phase}"
-      }
       if [ -e .attrs.sh ]; then source .attrs.sh; fi
       source $stdenv/setup
       genericBuild
@@ -232,6 +228,8 @@ let
     propagatedBuildInputs = map (getOutput "dev") depsHostTargetPropagated';
     depsTargetTarget = map (getOutput "dev") depsTargetTarget';
     depsTargetTargetPropagated = map (getOutput "dev") depsTargetTargetPropagated';
+
+    # TODO: should also disallow “debug” outputs anywhere
     disallowedReferences = disallowedReferences ++ subtractLists
       (getAllOutputs (depsBuildBuildPropagated' ++ depsBuildHostPropagated' ++ depsBuildTargetPropagated' ++ depsHostHost' ++ depsHostHostPropagated' ++ depsHostTarget' ++ depsHostTargetPropagated' ++ depsTargetTarget' ++ depsTargetTargetPropagated'))
       (getAllOutputs (depsBuildBuild' ++ depsBuildHost' ++ depsBuildTarget'));
