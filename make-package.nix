@@ -296,7 +296,7 @@ let
         else if stdenv.hostPlatform.isAarch64 then "aarch64"
         else if stdenv.hostPlatform.isx86_32  then "x86"
         else if stdenv.hostPlatform.isx86_64  then "x86_64"
-        else stdenv.hostPlatform.parsed.cpu.family + builtins.toString stdenv.hostPlatform.parsed.cpu.bits}
+        else stdenv.hostPlatform.parsed.cpu.family + builtins.toString stdenv.hostPlatform.parsed.cpu.bits}'
       cpu = '${stdenv.hostPlatform.parsed.cpu.name}'
       endian = '${if stdenv.hostPlatform.isLittleEndian then "little" else "big"}'
     ''}" ] ++ mesonFlags;
