@@ -104,9 +104,7 @@ let
   } @ attrs: let
 
     # TODO: this should run closePropagation to get propagated build inputs in drv
-    splicePackage = hostOffset: targetOffset: isPropagated: identifier:
-      if builtins.isString identifier
-      then (let
+    splicePackage = hostOffset: targetOffset: isPropagated: package: let
         packages' = if (hostOffset == -1 && targetOffset == -1) then packages.pkgsBuildBuild
           else if (hostOffset == -1 && targetOffset == 0) then packages.pkgsBuildHost
           else if (hostOffset == -1 && targetOffset == 1) then packages.pkgsBuildTarget
@@ -114,12 +112,12 @@ let
           else if (hostOffset == 0 && targetOffset == 1) then packages.pkgsHostTarget
           else if (hostOffset == 1 && targetOffset == 1) then packages.pkgsTargetTarget
           else throw "unknown offset combination: (${hostOffset}, ${targetOffset})";
-        in   if (attrByPath ((splitString "." identifier) ++ ["packageFun"]) null packages != null) then makePackage' ((attrByPath ((splitString "." identifier) ++ ["packageFun"]) null packages) packages' // { packages = packages'; })
-        else if (attrByPath (splitString "." identifier) null packages' != null) then attrByPath (splitString "." identifier) null packages'
-        else throw "Could not find '${identifier}'. Dependencies of makePackage should also be created with makePackage.")
-
-      # TODO: if the package has the right offsets, we could allow them to be used here
-      else throw "package must be a string identifier";
+      in if builtins.isString package
+      then (if (attrByPath ((splitString "." package) ++ ["packageFun"]) null packages != null) then makePackage' ((attrByPath ((splitString "." package) ++ ["packageFun"]) null packages) packages' // { packages = packages'; })
+            else if (attrByPath (splitString "." package) null packages' != null) then attrByPath (splitString "." package) null packages'
+            else throw "Could not find '${package}'. Dependencies of makePackage should also be created with makePackage.")
+      else if (package ? packageFun) then makePackage' (package.packageFun packages' // { packages = packages'; })
+      else throw "dependencies must be specified as either a package or a string identifier";
 
     depsBuildBuild' = flatten (map (splicePackage (-1) (-1) false) depsBuildBuild);
     depsBuildBuildPropagated' = flatten (map (splicePackage (-1) (-1) true) depsBuildBuildPropagated);
