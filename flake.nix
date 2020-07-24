@@ -19,12 +19,26 @@
     makePackagesFlake = {
       systems ? allSystems
     , crossSystems ? []
-    , defaultPackageName ? null
     , nixpkgs' ? nixpkgs
-    }: packages: let
+    , defaultPackageName ? null
+    }: packages:  let
+      forAllSystems = f: nixpkgs.lib.genAttrs systems (system: f system);
       defaultPackageName' = if defaultPackageName != null then defaultPackageName
                             else builtins.head (builtins.attrNames packages);
+      packages' = self.makePackagesFlake' { inherit systems crossSystems nixpkgs'; } packages;
+    in  {
+      # inherit overlay;
 
+      packages = packages';
+
+      defaultPackage = forAllSystems (system: packages'.${system}.${defaultPackageName'});
+    };
+
+    makePackagesFlake' = {
+      systems ? allSystems
+    , crossSystems ? []
+    , nixpkgs' ? nixpkgs
+    }: packages: let
       forAllSystems = f: nixpkgs.lib.genAttrs systems (system: f system);
 
       overlayFun = system: final: prev: builtins.mapAttrs (name: f:
@@ -47,20 +61,12 @@
           overlays = [ (overlayFun system) ];
         }
       ));
-
-      packages' = forAllSystems (system: (builtins.mapAttrs (name: _: nixpkgsFor.${system}.${name}) packages)
+    in forAllSystems (system: (builtins.mapAttrs (name: _: nixpkgsFor.${system}.${name}) packages)
         // flattenAttrs (nixpkgs.lib.genAttrs crossSystems (crossSystem: builtins.mapAttrs (
           (name: _: nixpkgsCrossFor.${system}.${crossSystem}.${name})
         ) packages)));
-    in {
-      # inherit overlay;
 
-      packages = packages';
-
-      defaultPackage = forAllSystems (system: packages'.${system}.${defaultPackageName'});
-    };
-
-    checks = (let
+    checks = let
       oniguruma_ = self.makePackagesFlake {} {
         oniguruma = { ... }: rec {
           pname = "oniguruma";
@@ -75,7 +81,7 @@
           };
         };
       };
-    in self.makePackagesFlake { crossSystems = ["x86_64-linux" "aarch64-linux"]; } {
+    in self.makePackagesFlake' { crossSystems = ["x86_64-linux" "aarch64-linux"]; } {
       inherit oniguruma_;
 
       jq_ = { ... }: rec {
@@ -400,7 +406,7 @@
 
         installFlags = [ "sysconfdir=${placeholder "out"}/etc" ];
       };
-    }).packages;
+    };
 
   };
 }
