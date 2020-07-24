@@ -6,9 +6,14 @@ let
   getAllOutputs = f: flatten (map (x: map (name: getOutput name x) x.outputs) f);
 
   makePackage' = {
+    # meta
     pname, version
 
+    # outputs
   , outputs ? ["out"], setOutputFlags ? true
+  , outputDev ? null, outputBin ? null, outputInclude ? null
+  , outputLib ? null, outputDoc ? null, outputDevdoc ? null
+  , outputMan ? null, outputDevman ? null, outputInfo ? null
 
     # system
   , packages, system ? stdenv.buildPlatform.system, stdenv ? packages.stdenv
@@ -129,6 +134,7 @@ let
       (disallowEnvironment "fixupPhase")
       (requireType "pname" "string")
       (requireType "version" "string")
+      (requireType "setOutputFlags" "bool")
       (requireType "packages" "set")
       (requireType "stdenv" "set")
       (requireType "dontMakeSourcesWritable" "bool")
@@ -202,6 +208,8 @@ let
 
     outputs = outputs ++ optional separateDebugInfo "debug";
     inherit setOutputFlags;
+    inherit outputDev outputBin outputInclude outputLib;
+    inherit outputDoc outputDevdoc outputMan outputDevman outputInfo;
 
     __ignoreNulls = true;
 
