@@ -27,6 +27,7 @@ let
 
     # configure phase
   , dontConfigure ? false, configureFlags ? [], configureScript ? null
+  , configurePlatforms ? [ "build" "host" "target" ]
   , preConfigure ? "", postConfigure ? ""
   , dontDisableStatic ? false, dontAddDisableDepTrack ? false, dontAddPrefix ? false, dontFixLibtool ? false
   , cmakeFlags ? []
@@ -258,11 +259,11 @@ let
 
     # configure
     inherit dontConfigure configureScript preConfigure postConfigure;
-    configureFlags = [
-      "--build=${stdenv.buildPlatform.config}"
-      "--host=${stdenv.hostPlatform.config}"
-      "--target=${stdenv.targetPlatform.config}"
-    ] ++ configureFlags;
+    configureFlags = []
+      ++ optional (builtins.elem "build"  configurePlatforms) "--build=${stdenv.buildPlatform.config}"
+      ++ optional (builtins.elem "host"   configurePlatforms) "--host=${stdenv.hostPlatform.config}"
+      ++ optional (builtins.elem "target" configurePlatforms) "--target=${stdenv.targetPlatform.config}"
+      ++ configureFlags;
 
     cmakeFlags = [
       "-DCMAKE_SYSTEM_NAME=${stdenv.hostPlatform.uname.system or "Generic"}"
