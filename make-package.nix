@@ -50,7 +50,7 @@ let
   , ninjaFlags ? []
 
     # check phase
-  , doCheck ? true, enableParallelChecking ? true, checkTarget ? null
+  , doCheck ? stdenv.hostPlatform == stdenv.buildPlatform, enableParallelChecking ? true, checkTarget ? null
   , preCheck ? "", postCheck ? ""
   , dontUseNinjaCheck ? false
 
