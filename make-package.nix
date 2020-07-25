@@ -105,19 +105,19 @@ let
 
     # TODO: this should run closePropagation to get propagated build inputs in drv
     splicePackage = hostOffset: targetOffset: isPropagated: package: let
-        packages' = if (hostOffset == -1 && targetOffset == -1) then packages.pkgsBuildBuild
-          else if (hostOffset == -1 && targetOffset == 0) then packages.pkgsBuildHost
-          else if (hostOffset == -1 && targetOffset == 1) then packages.pkgsBuildTarget
-          else if (hostOffset == 0 && targetOffset == 0) then packages.pkgsHostHost
-          else if (hostOffset == 0 && targetOffset == 1) then packages.pkgsHostTarget
-          else if (hostOffset == 1 && targetOffset == 1) then packages.pkgsTargetTarget
+        packages' = if hostOffset == -1 && targetOffset == -1 then packages.pkgsBuildBuild
+          else if hostOffset == -1 && targetOffset == 0 then packages.pkgsBuildHost
+          else if hostOffset == -1 && targetOffset == 1 then packages.pkgsBuildTarget
+          else if hostOffset == 0 && targetOffset == 0 then packages.pkgsHostHost
+          else if hostOffset == 0 && targetOffset == 1 then packages.pkgsHostTarget
+          else if hostOffset == 1 && targetOffset == 1 then packages.pkgsTargetTarget
           else throw "unknown offset combination: (${hostOffset}, ${targetOffset})";
       in if builtins.isString package
-      then (if (attrByPath ((splitString "." package) ++ ["packageFun"]) null packages != null) then makePackage' ((attrByPath ((splitString "." package) ++ ["packageFun"]) null packages) packages' // { packages = packages'; })
-            else if (attrByPath (splitString "." package) null packages' != null) then attrByPath (splitString "." package) null packages'
+      then (if attrByPath (splitString "." package ++ ["packageFun"]) null packages != null then makePackage' ((attrByPath (splitString "." package ++ ["packageFun"]) null packages) packages' // { packages = packages'; })
+            else if attrByPath (splitString "." package) null packages' != null then attrByPath (splitString "." package) null packages'
             else throw "Could not find '${package}'. Dependencies of makePackage should also be created with makePackage.")
-      else if (package ? packageFun) then makePackage' (package.packageFun packages' // { packages = packages'; })
-      else if (package ? defaultPackage && builtins.hasAttr system package.defaultPackage && package.defaultPackage.${system} ? packageFun) then makePackage' (package.defaultPackage.${system}.packageFun packages' // { packages = packages'; })
+      else if package ? packageFun then makePackage' (package.packageFun packages' // { packages = packages'; })
+      else if package ? defaultPackage && builtins.hasAttr system package.defaultPackage && package.defaultPackage.${system} ? packageFun then makePackage' (package.defaultPackage.${system}.packageFun packages' // { packages = packages'; })
       else throw "makePackage dependencies must be either a makePackage package or a string identifier";
 
     depsBuildBuild' = flatten (map (splicePackage (-1) (-1) false) depsBuildBuild);
@@ -142,15 +142,15 @@ let
 
     # error checking
     disallowEnvironment = name:
-      if (environment ? name) then "makePackage argument 'environment' cannot contain '${name}'" else null;
+      if environment ? name then "makePackage argument 'environment' cannot contain '${name}'" else null;
     requireType = name: type:
-      if (builtins.hasAttr name attrs && builtins.typeOf (attrs.${name}) != type)
+      if builtins.hasAttr name attrs && builtins.typeOf attrs.${name} != type
       then "makePackage argument '${name}' should be of type '${type}' but got type '${builtins.typeOf attrs.${name}}'"
       else null;
     headOrNull = l: if builtins.length l == 0 then null else builtins.head l;
     requireListType = name: type:
       if builtins.hasAttr name attrs then headOrNull (builtins.filter (v: !(isNull v)) (map (v:
-        if (builtins.typeOf v != type)
+        if builtins.typeOf v != type
         then "makePackage argument '${name}' should be a list of type '${type}' but found a list element of type '${builtins.typeOf attrs.${name}}'"
         else null
       ) attrs.${name})) else null;
@@ -292,7 +292,7 @@ let
       (requireType "gappsWrapperArgs" "list")
     ]);
 
-  in if errMessages == [] then ((derivation (environment // {
+  in if errMessages == [] then (derivation (environment // {
     inherit system;
     name = "${pname}-${version}";
 
@@ -433,11 +433,11 @@ let
     outputSystem = packages.stdenv.hostPlatform.system;
     outputUnspecified = true;
     overrideAttrs = f: makePackage' (attrs // (f attrs));
-  })
+  }
 
   # TODO: show more than one error message at a time
   else throw (builtins.head errMessages);
-in packages: packageFun: (makePackage' ((packageFun packages) // { inherit packages; })) // {
+in packages: packageFun: makePackage' (packageFun packages // { inherit packages; }) // {
      inherit packageFun;
      subtype = "package";
 

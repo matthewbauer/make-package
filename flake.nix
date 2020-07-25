@@ -78,7 +78,7 @@
       overlayFun = system: final: prev: builtins.mapAttrs (name: f:
         if builtins.isFunction f then self.makePackage final f
         else if f ? packageFun then self.makePackage final f.packageFun
-        else if (f ? defaultPackage && builtins.hasAttr system f.defaultPackage && f.defaultPackage.${system} ? packageFun) then (self.makePackage final f.defaultPackage.${system}.packageFun)
+        else if f ? defaultPackage && builtins.hasAttr system f.defaultPackage && f.defaultPackage.${system} ? packageFun then self.makePackage final f.defaultPackage.${system}.packageFun
         else throw "Package entry for '${name}' must either be a function for makePackage, or a flake made with makePackage, got type ${builtins.typeOf f}") packages;
 
       # Memoize nixpkgs for different platforms for efficiency.
