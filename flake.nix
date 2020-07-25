@@ -95,10 +95,11 @@
           overlays = [ (overlayFun system) ];
         }
       ));
-    in forAllSystems (system: (builtins.mapAttrs (name: _: nixpkgsFor.${system}.${name}) packages)
-        // flattenAttrs (nixpkgs.lib.genAttrs crossSystems (crossSystem: builtins.mapAttrs (
-          (name: _: nixpkgsCrossFor.${system}.${crossSystem}.${name})
-        ) packages)));
+    in forAllSystems (system: builtins.mapAttrs (name: _: nixpkgsFor.${system}.${name}) packages
+        // flattenAttrs (nixpkgs.lib.genAttrs (builtins.filter (crossSystem: system != crossSystem) crossSystems)
+          (crossSystem: builtins.mapAttrs (
+            name: _: nixpkgsCrossFor.${system}.${crossSystem}.${name}
+          ) packages)));
 
     checks = let
       oniguruma_ = self.makePackagesFlake {} {
@@ -117,7 +118,7 @@
           };
         };
       };
-    in self.makePackagesFlake' { } {
+    in self.makePackagesFlake' { crossSystems = [ "x86_64-linux" "aarch64-linux" ]; } {
       jq_ = { stdenv, ... }: rec {
         pname = "jq";
         version = "1.6";
@@ -535,7 +536,8 @@
           "libsodium_"
           "libarchive"
           "gtest"
-        ] ++ optional stdenv.hostPlatform.isLinux "libseccomp";
+        ];
+        depsHostTarget = optional stdenv.hostPlatform.isLinux "libseccomp";
         propagatedBuildInputs = [
           "boehmgc_"
         ];
