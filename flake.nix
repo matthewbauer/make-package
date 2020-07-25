@@ -141,7 +141,9 @@
           "--sbindir=${placeholder "bin"}/bin"
           "--datadir=${placeholder "doc"}/share"
           "--mandir=${placeholder "man"}/share/man"
-        ];
+        ]
+        # jq is linked to libjq:
+        ++ stdenv.lib.optional (!stdenv.isDarwin) "LDFLAGS=-Wl,-rpath,\\\${libdir}";
       };
 
       hello_ = ({ ... }: rec {
