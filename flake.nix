@@ -118,7 +118,7 @@
         };
       };
     in self.makePackagesFlake' { } {
-      jq_ = { ... }: rec {
+      jq_ = { stdenv, ... }: rec {
         pname = "jq";
         version = "1.6";
 
