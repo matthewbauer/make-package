@@ -333,10 +333,10 @@ let
     depsTargetTargetPropagated = map (getOutput "dev") depsTargetTargetPropagated';
 
     # TODO: should also disallow “debug” outputs anywhere
-    disallowedReferences = disallowedReferences ++ subtractLists
-      (getAllOutputs (depsBuildBuildPropagated' ++ depsBuildHostPropagated' ++ depsBuildTargetPropagated' ++ depsHostHost' ++ depsHostHostPropagated' ++ depsHostTarget' ++ depsHostTargetPropagated' ++ depsTargetTarget' ++ depsTargetTargetPropagated'))
-      (getAllOutputs (depsBuildBuild' ++ depsBuildHost' ++ depsBuildTarget'));
-    inherit allowedRequisites allowedReferences disallowedRequisites exportReferencesGraph;
+    # disallowedReferences = disallowedReferences ++ subtractLists
+    #   (getAllOutputs (depsBuildBuildPropagated' ++ depsBuildHostPropagated' ++ depsBuildTargetPropagated' ++ depsHostHost' ++ depsHostHostPropagated' ++ depsHostTarget' ++ depsHostTargetPropagated' ++ depsTargetTarget' ++ depsTargetTargetPropagated'))
+    #   (getAllOutputs (depsBuildBuild' ++ depsBuildHost' ++ depsBuildTarget'));
+    inherit allowedRequisites allowedReferences disallowedReferences disallowedRequisites exportReferencesGraph;
 
     # unpack
     dontUnpack = false;
