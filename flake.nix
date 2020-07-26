@@ -558,9 +558,14 @@
           "--with-system=${stdenv.hostPlatform.system}"
         ];
 
-        makeFlags = [ "profiledir=${placeholder "out"}/etc/profile.d" ];
+        makeFlags = [
+          "profiledir=${placeholder "out"}/etc/profile.d"
+          "PRECOMPILE_HEADERS=${if stdenv.buildPlatform != stdenv.hostPlatform then "0" else "1"}"
+        ];
 
-        installFlags = [ "sysconfdir=${placeholder "out"}/etc" ];
+        installFlags = [
+          "sysconfdir=${placeholder "out"}/etc"
+        ];
       };
     };
 
